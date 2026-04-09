@@ -1,0 +1,7 @@
+casparser
+pandas
+yfinance
+openai
+requests
+tabulate
+python-dotenv

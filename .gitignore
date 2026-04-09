@@ -1,0 +1,31 @@
+# ── Sensitive data ────────────────────────────────────────────────────────────
+data/*
+!data/.gitkeep
+.env
+
+# ── Generated output ─────────────────────────────────────────────────────────
+output/*
+!output/.gitkeep
+scheme_codes.json
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual environment ──────────────────────────────────────────────────────
+venv/
+.venv/
+
+# ── IDE / OS ─────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
