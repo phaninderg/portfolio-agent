@@ -2,7 +2,7 @@
 
 A multi-agent system that analyses Indian mutual fund portfolios and provides actionable investment recommendations. Powered by a local LLM (LM Studio / Ollama) — **no portfolio data leaves your machine**.
 
-[View sample report](docs/sample_report.html) — shows all verdict types (CONTINUE, INCREASE_SIP, RESTART_SIP, DECREASE_SIP, SWITCH, STOP_SIP, WITHDRAW_PARTIAL, WITHDRAW_FULL, PAUSE_SIP) with 10yr/15yr return data and consolidation recommendations.
+[View sample report](https://htmlpreview.github.io/?https://github.com/phaninderg/portfolio-agent/blob/main/docs/sample_report.html) — shows all verdict types (CONTINUE, INCREASE_SIP, RESTART_SIP, DECREASE_SIP, SWITCH, STOP_SIP, WITHDRAW_PARTIAL, WITHDRAW_FULL, PAUSE_SIP) with 10yr/15yr return data and consolidation recommendations.
 
 ## What It Does
 
