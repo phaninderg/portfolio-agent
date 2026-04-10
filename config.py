@@ -72,6 +72,11 @@ BENCHMARK_MAP = {
     "Other":          "^NSEI",
 }
 
+# ── Fund Discovery ────────────────────────────────────────────────────────────
+FUND_DISCOVERY_CACHE_TTL_DAYS    = int(os.getenv("FUND_CACHE_TTL_DAYS", "7"))
+FUND_DISCOVERY_MAX_PER_SEGMENT   = int(os.getenv("FUND_MAX_PER_SEGMENT", "15"))
+FUND_DISCOVERY_MIN_TRACK_RECORD  = int(os.getenv("FUND_MIN_TRACK_RECORD", "3"))
+
 # ── Output paths ─────────────────────────────────────────────────────────────
 REPORT_HTML_PATH  = str(_ROOT / "output" / "report.html")
 SCHEME_CODES_PATH = str(_ROOT / "scheme_codes.json")

@@ -147,6 +147,8 @@ def print_verdicts(verdicts: list[dict], holdings: list[dict]) -> None:
         print(f"     → {v['reasoning']}")
         if v.get("switch_to"):
             print(f"     → Switch to: {v['switch_to']}")
+        if v.get("consolidate_into"):
+            print(f"     → Consolidate into: {v['consolidate_into']}")
 
     print()
 
@@ -167,4 +169,6 @@ def print_verdicts(verdicts: list[dict], holdings: list[dict]) -> None:
             print(f"  {i}. {icon} {v['verdict']} — {v['fund_name'][:55]}")
             if v.get("switch_to"):
                 print(f"       Switch to: {v['switch_to']}")
+            if v.get("consolidate_into"):
+                print(f"       Consolidate into: {v['consolidate_into']}")
         print()

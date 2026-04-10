@@ -43,21 +43,13 @@ Each fund will have a sip_status field:
 
 Always mention the SIP status in your reasoning.
 
-## SWITCH RULES — MARKET-WIDE RECOMMENDATIONS
+## SWITCH RULES — DATA-BACKED RECOMMENDATIONS
 When recommending a SWITCH:
 - You are NOT limited to funds already in the investor's portfolio
-- Recommend the BEST fund available in India for that category, from any AMC
-- Well-known high-quality funds by category:
-  Large Cap       : Mirae Asset Large Cap, HDFC Top 100, Axis Bluechip
-  Mid Cap         : Kotak Emerging Equity (Kotak Midcap), HDFC Mid-Cap Opportunities, Nippon India Growth Fund
-  Small Cap       : Nippon India Small Cap, Quant Small Cap, Canara Robeco Small Cap
-  Flexi Cap       : Parag Parikh Flexi Cap, HDFC Flexi Cap, Mirae Asset Flexi Cap
-  Multi Cap       : Nippon India Multi Cap, ICICI Pru Multicap, Quant Active Fund
-  ELSS            : Mirae Asset ELSS, Quant ELSS, Parag Parikh ELSS
-  Aggressive Hybrid: ICICI Pru Equity & Debt, Mirae Asset Hybrid Equity
-  Index (Large)   : UTI Nifty 50 Index, Nippon India Index Nifty 50, HDFC Index Nifty 50
-  Index (Mid)     : Motilal Oswal Nifty Midcap 150 Index, UTI Nifty Midcap 150 Index
-- State WHY the recommended fund is better: its alpha track record, consistency, AUM stability
+- Use the "Top Alternatives by Segment" section provided below — these are REAL funds
+  ranked by actual live returns from mfapi.in, with 1yr/3yr/5yr/10yr/15yr CAGR data
+- Always pick a fund from the alternatives list for the matching category
+- State WHY the recommended fund is better: cite its actual return numbers from the data
 - If the investor already holds the best fund in the category, say so and recommend STOP_SIP instead
 
 ## REASONING FRAMEWORK
@@ -76,11 +68,12 @@ When recommending a SWITCH:
 - Alpha = fund return minus benchmark return
 - Positive alpha = fund beating its benchmark = good
 - Negative alpha = fund lagging its benchmark = concerning
-- Judge across ALL three horizons (1yr, 3yr, 5yr) not just recent
+- Judge across ALL available horizons (1yr, 3yr, 5yr, and 10yr/15yr when present) not just recent
+- When 10yr or 15yr alpha is available, it is the strongest signal of fund quality
 
 ### Step 4 — Trend Classification
 Assign one of:
-- stable_outperformer    : beats benchmark across all 3 horizons
+- stable_outperformer    : beats benchmark across all available horizons (1yr/3yr/5yr and 10yr/15yr if present)
 - recent_underperformer  : good 3yr/5yr but weak 1yr (possibly temporary)
 - momentum_chaser        : great 1yr, poor 3yr/5yr (red flag — chase effect)
 - consistent_laggard     : underperforming across all horizons (exit candidate)
@@ -105,6 +98,29 @@ When benchmark itself is negative or market condition is "bear":
 - For SIP investors: falling NAV = buying more units cheaper → often INCREASE_SIP or RESTART_SIP
 - Only STOP/WITHDRAW if fund is structurally broken:
   fund underperforming ALL horizons AND negative alpha AND poor XIRR
+
+## PORTFOLIO CONSOLIDATION RULES — OVER-DIVERSIFICATION
+Having multiple funds in the same category dilutes returns and adds unnecessary complexity.
+Identify and flag over-diversification.
+
+### Detection:
+- 2 funds in the same category → acceptable if both are strong performers
+- 3+ funds in the same category → over-diversified, MUST recommend consolidation
+- Look at `fund_category` field to group funds. Treat similar categories as same
+  (e.g. "Large Cap" and "Large & Mid Cap" overlap significantly)
+
+### Action:
+- Compare all funds in the overlapping category by alpha, XIRR, and consistency
+- Keep the 1-2 best performers (highest alpha across all horizons + best XIRR)
+- For weaker duplicates: recommend SWITCH (consolidate into the best fund) or WITHDRAW_FULL
+- In your reasoning, explicitly state: "Portfolio has N funds in [category]. Consolidating
+  into [best fund] reduces overlap and simplifies tracking."
+- Use `consolidate_into` field to name the fund to consolidate into (from the portfolio)
+
+### Examples:
+- 3 Large Cap funds → keep the one with best 5yr alpha, SWITCH the other 2 into it
+- 2 Flexi Cap + 1 Multi Cap → these overlap heavily, keep 1, consolidate rest
+- 2 Index funds tracking different indices (Nifty 50 + Nifty Next 50) → acceptable, NOT overlap
 
 ## SECTORAL / THEMATIC FUND RULES
 Sectoral/thematic funds are high-risk, cyclical bets whose outperformance can reverse quickly.
@@ -136,7 +152,8 @@ Return a valid JSON array. One object per fund. No extra text outside JSON.
     "verdict": "CONTINUE | RESTART_SIP | INCREASE_SIP | DECREASE_SIP | PAUSE_SIP | STOP_SIP | WITHDRAW_PARTIAL | WITHDRAW_FULL | SWITCH",
     "confidence": "high | medium | low",
     "switch_to": "best fund name from market (any AMC) or null",
-    "reasoning": "2-4 sentences. Must mention: SIP status, key alpha numbers, market context, and why this verdict."
+    "consolidate_into": "fund name from portfolio to consolidate into, or null (use when verdict is SWITCH/WITHDRAW due to category overlap)",
+    "reasoning": "2-4 sentences. Must mention: SIP status, key alpha numbers, market context, and why this verdict. For consolidation, state how many funds overlap and why this one is being removed."
   }
 ]
 
@@ -148,10 +165,49 @@ Be direct. Be specific. Use actual numbers from the data. Do not hedge excessive
 # sip_status, last_transaction_date, fmt_pct imported from tools.formatting
 
 
+def _get_switch_alternatives(holdings: list[dict]) -> str:
+    """
+    Fetch top-ranked alternatives per segment from the dynamic discovery cache.
+    Returns a formatted string to inject into the advisor prompt.
+    """
+    try:
+        from tools.fund_discovery import discover_fund_universe, categorize_fund
+        from tools.fetch_nav import fetch_fund_returns
+        from tools.fund_universe import _rank_score
+
+        # Determine which segments the user's holdings span
+        segments_needed = set()
+        for h in holdings:
+            cat = (h.get("fund_category") or "").lower()
+            seg = categorize_fund(cat)
+            if seg:
+                segments_needed.add(seg)
+
+        if not segments_needed:
+            # Fallback: cover common equity segments
+            segments_needed = {"large_cap", "mid_cap", "small_cap", "flexi_cap", "index"}
+
+        # Get candidates from cache (no API call if cache is valid)
+        candidates_by_seg = discover_fund_universe(segments_needed=segments_needed)
+
+        lines = ["\n## Top Alternatives by Segment (ranked by live returns from mfapi.in)"]
+        for seg, funds in sorted(candidates_by_seg.items()):
+            # Show top 3 per segment with their scheme codes
+            top = funds[:3]
+            lines.append(f"\n### {seg.replace('_', ' ').title()}")
+            for f in top:
+                lines.append(f"- {f['schemeName']} (code: {f['schemeCode']})")
+
+        return "\n".join(lines)
+    except Exception as exc:
+        return f"\n## Switch Alternatives\nCould not load dynamic alternatives: {exc}"
+
+
 def build_advisor_prompt(holdings: list[dict], user_profile: dict, market_condition: str) -> str:
     """
     Build the user message for the Advisor Agent.
     Formats all holdings + profile into a structured prompt.
+    Includes dynamic fund alternatives for SWITCH recommendations.
     """
     lines = []
 
@@ -177,6 +233,25 @@ def build_advisor_prompt(holdings: list[dict], user_profile: dict, market_condit
     lines.append(f"- Current Value: ₹{total_current:,.0f}")
     lines.append(f"- Overall P&L: ₹{total_current - total_invested:+,.0f} ({(total_current - total_invested) / total_invested * 100:+.1f}%)")
     lines.append("")
+
+    # Category overlap summary (pre-compute for the LLM)
+    from collections import Counter
+    cat_counts = Counter()
+    cat_funds: dict[str, list[str]] = {}
+    for h in holdings:
+        cat = h.get("fund_category") or "Unknown"
+        cat_counts[cat] += 1
+        cat_funds.setdefault(cat, []).append(h["fund_name"])
+
+    overlaps = {cat: names for cat, names in cat_funds.items() if len(names) >= 2}
+    if overlaps:
+        lines.append("## Category Overlap Analysis (CONSOLIDATION CANDIDATES)")
+        for cat, names in sorted(overlaps.items(), key=lambda x: -len(x[1])):
+            flag = "⚠️ OVER-DIVERSIFIED" if len(names) >= 3 else "Review"
+            lines.append(f"- **{cat}**: {len(names)} funds [{flag}]")
+            for name in names:
+                lines.append(f"  - {name}")
+        lines.append("")
 
     # Sectoral exposure summary (pre-compute for the LLM)
     sectoral_funds = [h for h in holdings if "Sectoral" in (h.get("fund_category") or "")]
@@ -208,9 +283,23 @@ def build_advisor_prompt(holdings: list[dict], user_profile: dict, market_condit
         lines.append(f"- Investment Type: {h.get('investment_type', 'unknown')} | Typical SIP: ₹{h.get('sip_amount', 0):,.0f}/month")
         lines.append(f"- Invested: ₹{invested:,.0f} | Current Value: ₹{current:,.0f} | P&L: ₹{current - invested:+,.0f}")
         lines.append(f"- XIRR: {fmt_pct(h.get('xirr'))}")
-        lines.append(f"- Fund Returns  — 1yr: {fmt_pct(h.get('return_1yr'))} | 3yr: {fmt_pct(h.get('return_3yr'))} | 5yr: {fmt_pct(h.get('return_5yr'))}")
-        lines.append(f"- Benchmark ({h.get('benchmark_ticker', 'N/A')}) — 1yr: {fmt_pct(h.get('benchmark_return_1yr'))} | 3yr: {fmt_pct(h.get('benchmark_return_3yr'))} | 5yr: {fmt_pct(h.get('benchmark_return_5yr'))}")
-        lines.append(f"- Alpha         — 1yr: {fmt_pct(h.get('alpha_1yr'))} | 3yr: {fmt_pct(h.get('alpha_3yr'))} | 5yr: {fmt_pct(h.get('alpha_5yr'))}")
+        fund_ret  = f"1yr: {fmt_pct(h.get('return_1yr'))} | 3yr: {fmt_pct(h.get('return_3yr'))} | 5yr: {fmt_pct(h.get('return_5yr'))}"
+        bench_ret = f"1yr: {fmt_pct(h.get('benchmark_return_1yr'))} | 3yr: {fmt_pct(h.get('benchmark_return_3yr'))} | 5yr: {fmt_pct(h.get('benchmark_return_5yr'))}"
+        alpha_ret = f"1yr: {fmt_pct(h.get('alpha_1yr'))} | 3yr: {fmt_pct(h.get('alpha_3yr'))} | 5yr: {fmt_pct(h.get('alpha_5yr'))}"
+
+        # Append 10yr/15yr if available
+        if h.get("return_10yr") is not None:
+            fund_ret  += f" | 10yr: {fmt_pct(h.get('return_10yr'))}"
+            bench_ret += f" | 10yr: {fmt_pct(h.get('benchmark_return_10yr'))}"
+            alpha_ret += f" | 10yr: {fmt_pct(h.get('alpha_10yr'))}"
+        if h.get("return_15yr") is not None:
+            fund_ret  += f" | 15yr: {fmt_pct(h.get('return_15yr'))}"
+            bench_ret += f" | 15yr: {fmt_pct(h.get('benchmark_return_15yr'))}"
+            alpha_ret += f" | 15yr: {fmt_pct(h.get('alpha_15yr'))}"
+
+        lines.append(f"- Fund Returns  — {fund_ret}")
+        lines.append(f"- Benchmark ({h.get('benchmark_ticker', 'N/A')}) — {bench_ret}")
+        lines.append(f"- Alpha         — {alpha_ret}")
         if score:
             lines.append(f"- Analyst Score — trend: {score.get('trend')} | alpha: {score.get('alpha_score')} | downside: {score.get('downside_protection')} | consistency: {score.get('consistency')}")
             if score.get("red_flags"):
@@ -220,5 +309,8 @@ def build_advisor_prompt(holdings: list[dict], user_profile: dict, market_condit
             if score.get("score_notes"):
                 lines.append(f"- Analyst Notes: {score['score_notes']}")
         lines.append("")
+
+    # Append dynamic alternatives for SWITCH recommendations
+    lines.append(_get_switch_alternatives(holdings))
 
     return "\n".join(lines)

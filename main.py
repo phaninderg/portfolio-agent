@@ -72,7 +72,7 @@ def print_portfolio_summary(holdings: list[dict]) -> None:
         invested = h.get("invested_amount", 0) or 0
         current  = h.get("current_value", 0) or 0
         pnl      = current - invested
-        rows.append([
+        row = [
             h["fund_name"][:42],
             h.get("investment_type", "—"),
             f"₹{invested:,.0f}",
@@ -82,12 +82,15 @@ def print_portfolio_summary(holdings: list[dict]) -> None:
             _fmt(h.get("return_1yr"), "%"),
             _fmt(h.get("return_3yr"), "%"),
             _fmt(h.get("return_5yr"), "%"),
+            _fmt(h.get("return_10yr"), "%"),
+            _fmt(h.get("return_15yr"), "%"),
             _fmt(h.get("alpha_1yr"), "%"),
-        ])
+        ]
+        rows.append(row)
 
     headers = [
         "Fund", "Type", "Invested", "Current", "P&L",
-        "XIRR", "1yr", "3yr", "5yr", "α1yr",
+        "XIRR", "1yr", "3yr", "5yr", "10yr", "15yr", "α1yr",
     ]
 
     print()

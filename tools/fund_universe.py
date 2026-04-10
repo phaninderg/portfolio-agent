@@ -1,8 +1,11 @@
 """
-Curated fund universe for new investor recommendations.
+Fund universe for new investor recommendations.
 
-Each segment contains top-rated Direct Growth funds across AMCs.
-Static data (fund names, segment tags, reasons) is used as a SEED.
+Two modes:
+  1. DYNAMIC (default): Discovers Direct Growth funds from mfapi.in master list,
+     categorises into segments, fetches live returns including 10yr/15yr CAGR.
+  2. FALLBACK: Uses a hardcoded curated list when mfapi.in is unreachable.
+
 At runtime, `enrich_fund_universe()` fetches LIVE returns from mfapi.in
 and `pick_funds_live()` ranks candidates by actual current performance.
 """
@@ -75,314 +78,6 @@ SEGMENTS = {
         "benchmark": "Nifty REITs & InvITs",
     },
 }
-
-
-# ── Curated fund list ────────────────────────────────────────────────────────
-# Each fund: name, segment, approx_3yr_cagr, approx_5yr_cagr, why
-
-FUND_UNIVERSE: list[dict] = [
-    # ── Large Cap ────────────────────────────────────────────────
-    {
-        "fund_name": "Mirae Asset Large Cap Fund - Direct Growth",
-        "scheme_code": "118825",
-        "segment": "large_cap",
-        "amc": "Mirae Asset",
-        "approx_3yr_cagr": 16.5,
-        "approx_5yr_cagr": 15.2,
-        "expense_ratio": 0.53,
-        "min_sip": 500,
-        "why": "Consistently beats Nifty 50. Clean portfolio, low churn. Top AUM in category.",
-    },
-    {
-        "fund_name": "HDFC Large Cap Fund - Direct Growth",
-        "scheme_code": "119018",
-        "segment": "large_cap",
-        "amc": "HDFC",
-        "approx_3yr_cagr": 18.1,
-        "approx_5yr_cagr": 14.8,
-        "why": "Value-oriented large cap. Strong in bull runs. One of India's oldest large cap funds.",
-    },
-    {
-        "fund_name": "Canara Robeco Large Cap Fund - Direct Growth",
-        "scheme_code": "118269",
-        "segment": "large_cap",
-        "amc": "Canara Robeco",
-        "approx_3yr_cagr": 15.8,
-        "approx_5yr_cagr": 16.1,
-        "why": "Under-the-radar outperformer. Consistent alpha, low drawdowns.",
-    },
-
-    # ── Mid Cap ──────────────────────────────────────────────────
-    {
-        "fund_name": "HDFC Mid Cap Fund - Direct Growth",
-        "scheme_code": "118989",
-        "segment": "mid_cap",
-        "amc": "HDFC",
-        "approx_3yr_cagr": 22.5,
-        "approx_5yr_cagr": 19.8,
-        "why": "Largest mid-cap fund by AUM. Proven 10+ year track record across cycles.",
-    },
-    {
-        "fund_name": "Kotak Midcap Fund - Direct Growth",
-        "scheme_code": "119775",
-        "segment": "mid_cap",
-        "amc": "Kotak",
-        "approx_3yr_cagr": 21.0,
-        "approx_5yr_cagr": 20.5,
-        "why": "Consistent compounder. Less volatile than peers. Quality-focused portfolio.",
-    },
-    {
-        "fund_name": "Motilal Oswal Midcap Fund - Direct Growth",
-        "scheme_code": "127042",
-        "segment": "mid_cap",
-        "amc": "Motilal Oswal",
-        "approx_3yr_cagr": 28.0,
-        "approx_5yr_cagr": 23.5,
-        "why": "Concentrated high-conviction bets. Aggressive but delivers strong alpha.",
-    },
-
-    # ── Small Cap ────────────────────────────────────────────────
-    {
-        "fund_name": "Nippon India Small Cap Fund - Direct Growth",
-        "scheme_code": "118778",
-        "segment": "small_cap",
-        "amc": "Nippon India",
-        "approx_3yr_cagr": 25.0,
-        "approx_5yr_cagr": 28.5,
-        "why": "Largest small cap fund. Diversified across 150+ stocks. Strong long-term alpha.",
-    },
-    {
-        "fund_name": "Quant Small Cap Fund - Direct Growth",
-        "scheme_code": "120828",
-        "segment": "small_cap",
-        "amc": "Quant",
-        "approx_3yr_cagr": 22.0,
-        "approx_5yr_cagr": 35.0,
-        "why": "Quant-driven, momentum-based. Highest returns in category over 5 years.",
-    },
-    {
-        "fund_name": "Canara Robeco Small Cap Fund - Direct Growth",
-        "scheme_code": "146130",
-        "segment": "small_cap",
-        "amc": "Canara Robeco",
-        "approx_3yr_cagr": 20.5,
-        "approx_5yr_cagr": 24.0,
-        "why": "Quality-focused small cap. Lower volatility than peers. Newer but consistent.",
-    },
-
-    # ── Flexi Cap ────────────────────────────────────────────────
-    {
-        "fund_name": "Parag Parikh Flexi Cap Fund - Direct Growth",
-        "scheme_code": "122639",
-        "segment": "flexi_cap",
-        "amc": "PPFAS",
-        "approx_3yr_cagr": 18.5,
-        "approx_5yr_cagr": 19.0,
-        "why": "Unique blend of Indian + international stocks. Built-in geographic diversification.",
-    },
-    {
-        "fund_name": "HDFC Flexi Cap Fund - Direct Growth",
-        "scheme_code": "118955",
-        "segment": "flexi_cap",
-        "amc": "HDFC",
-        "approx_3yr_cagr": 20.5,
-        "approx_5yr_cagr": 17.5,
-        "why": "Value-oriented flex. Strong recovery from 2020 dip. Large AUM, stable fund house.",
-    },
-
-    # ── Index Funds ──────────────────────────────────────────────
-    {
-        "fund_name": "UTI Nifty 50 Index Fund - Direct Growth",
-        "scheme_code": "120716",
-        "segment": "index",
-        "amc": "UTI",
-        "approx_3yr_cagr": 14.5,
-        "approx_5yr_cagr": 13.8,
-        "expense_ratio": 0.18,
-        "min_sip": 500,
-        "why": "Lowest tracking error among Nifty 50 index funds. Rock-bottom expense ratio.",
-    },
-    {
-        "fund_name": "Motilal Oswal Nifty Midcap 150 Index Fund - Direct Growth",
-        "scheme_code": "147622",
-        "segment": "index",
-        "amc": "Motilal Oswal",
-        "approx_3yr_cagr": 20.0,
-        "approx_5yr_cagr": 18.5,
-        "expense_ratio": 0.30,
-        "min_sip": 500,
-        "why": "Low-cost midcap exposure. Good alternative to active mid-cap funds.",
-    },
-    {
-        "fund_name": "Motilal Oswal Nifty Next 50 Index Fund - Direct Growth",
-        "scheme_code": "147796",
-        "segment": "index",
-        "amc": "Motilal Oswal",
-        "approx_3yr_cagr": 18.0,
-        "approx_5yr_cagr": 14.0,
-        "expense_ratio": 0.25,
-        "min_sip": 500,
-        "why": "Next 50 blue-chips (51-100). Bridge between large and mid cap. Low cost.",
-    },
-
-    # ── ELSS ─────────────────────────────────────────────────────
-    {
-        "fund_name": "Mirae Asset ELSS Tax Saver Fund - Direct Growth",
-        "scheme_code": "135781",
-        "segment": "elss",
-        "amc": "Mirae Asset",
-        "approx_3yr_cagr": 17.0,
-        "approx_5yr_cagr": 16.5,
-        "why": "Best ELSS by consistency. Tax saving + wealth creation in one fund.",
-    },
-    {
-        "fund_name": "Quant ELSS Tax Saver Fund - Direct Growth",
-        "scheme_code": "120847",
-        "segment": "elss",
-        "amc": "Quant",
-        "approx_3yr_cagr": 20.0,
-        "approx_5yr_cagr": 28.0,
-        "why": "Highest returns in ELSS category. Momentum-driven strategy.",
-    },
-
-    # ── Gold ─────────────────────────────────────────────────────
-    {
-        "fund_name": "SBI Gold Fund - Direct Growth",
-        "scheme_code": "119788",
-        "segment": "gold",
-        "amc": "SBI",
-        "approx_3yr_cagr": 15.0,
-        "approx_5yr_cagr": 13.5,
-        "why": "Largest gold fund by AUM. Tracks domestic gold prices. No demat needed.",
-    },
-    {
-        "fund_name": "HDFC Gold ETF Fund of Fund - Direct Growth",
-        "scheme_code": "119132",
-        "segment": "gold",
-        "amc": "HDFC",
-        "approx_3yr_cagr": 14.8,
-        "approx_5yr_cagr": 13.2,
-        "why": "Reliable gold exposure. Invests in gold ETFs. Low tracking error.",
-    },
-    {
-        "fund_name": "Nippon India Gold Savings Fund - Direct Growth",
-        "scheme_code": "118663",
-        "segment": "gold",
-        "amc": "Nippon India",
-        "approx_3yr_cagr": 14.5,
-        "approx_5yr_cagr": 13.0,
-        "why": "Fund of fund investing in Nippon India Gold ETF. Easy SIP in gold.",
-    },
-
-    # ── Silver ───────────────────────────────────────────────────
-    {
-        "fund_name": "ICICI Prudential Silver ETF Fund of Fund - Direct Growth",
-        "scheme_code": "149775",
-        "segment": "silver",
-        "amc": "ICICI Prudential",
-        "approx_3yr_cagr": 12.0,
-        "approx_5yr_cagr": None,  # newer fund
-        "why": "First silver FoF in India. SIP into silver without demat. Newer but from top AMC.",
-    },
-    {
-        "fund_name": "Nippon India Silver ETF Fund of Fund - Direct Growth",
-        "scheme_code": "149760",
-        "segment": "silver",
-        "amc": "Nippon India",
-        "approx_3yr_cagr": 11.5,
-        "approx_5yr_cagr": None,
-        "why": "Silver exposure via ETF route. Growing AUM. Alternative to physical silver.",
-    },
-
-    # ── International ────────────────────────────────────────────
-    {
-        "fund_name": "Motilal Oswal Nasdaq 100 Fund of Fund - Direct Growth",
-        "scheme_code": "145552",
-        "segment": "international",
-        "amc": "Motilal Oswal",
-        "approx_3yr_cagr": 12.0,
-        "approx_5yr_cagr": 18.0,
-        "why": "Access to top 100 US tech/growth stocks. Best way to own Apple, Google, etc.",
-    },
-    {
-        "fund_name": "Motilal Oswal S&P 500 Index Fund - Direct Growth",
-        "scheme_code": "148381",
-        "segment": "international",
-        "amc": "Motilal Oswal",
-        "approx_3yr_cagr": 13.5,
-        "approx_5yr_cagr": 15.0,
-        "why": "Broad US market exposure. 500 largest US companies. Lower risk than Nasdaq 100.",
-    },
-
-    # ── Debt / Fixed Income ──────────────────────────────────────
-    {
-        "fund_name": "HDFC Short Term Debt Fund - Direct Growth",
-        "scheme_code": "119016",
-        "segment": "debt",
-        "amc": "HDFC",
-        "approx_3yr_cagr": 7.0,
-        "approx_5yr_cagr": 7.5,
-        "why": "Stable returns, low volatility. Good parking spot for conservative allocation.",
-    },
-    {
-        "fund_name": "ICICI Prudential Corporate Bond Fund - Direct Growth",
-        "scheme_code": "120692",
-        "segment": "debt",
-        "amc": "ICICI Prudential",
-        "approx_3yr_cagr": 6.8,
-        "approx_5yr_cagr": 7.2,
-        "why": "High-quality corporate bonds. Better than FD for 2+ year horizon. Stable.",
-    },
-    {
-        "fund_name": "Parag Parikh Conservative Hybrid Fund - Direct Growth",
-        "scheme_code": "148958",
-        "segment": "debt",
-        "amc": "PPFAS",
-        "approx_3yr_cagr": 9.0,
-        "approx_5yr_cagr": None,
-        "why": "75% debt + 25% equity. Slightly higher returns than pure debt. Tax efficient.",
-    },
-
-    # ── Aggressive Hybrid ────────────────────────────────────────
-    {
-        "fund_name": "ICICI Prudential Equity & Debt Fund - Direct Growth",
-        "scheme_code": "120251",
-        "segment": "hybrid",
-        "amc": "ICICI Prudential",
-        "approx_3yr_cagr": 18.0,
-        "approx_5yr_cagr": 16.5,
-        "why": "Best aggressive hybrid. Auto-rebalances equity/debt. Lower drawdown than pure equity.",
-    },
-    {
-        "fund_name": "Mirae Asset Aggressive Hybrid Fund - Direct Growth",
-        "scheme_code": "134813",
-        "segment": "hybrid",
-        "amc": "Mirae Asset",
-        "approx_3yr_cagr": 15.5,
-        "approx_5yr_cagr": 14.0,
-        "why": "Quality stock picking + debt cushion. Good for moderate risk investors.",
-    },
-
-    # ── Real Estate (REITs) ──────────────────────────────────────
-    {
-        "fund_name": "Kotak International REIT Fund of Fund - Direct Growth",
-        "scheme_code": "148646",
-        "segment": "reit",
-        "amc": "Kotak",
-        "approx_3yr_cagr": 5.0,
-        "approx_5yr_cagr": None,
-        "why": "Global REIT exposure via fund of fund. Diversified real estate without buying property.",
-    },
-    {
-        "fund_name": "Mahindra Manulife Asia Pacific REITs Fund of Fund - Direct Growth",
-        "scheme_code": "149230",
-        "segment": "reit",
-        "amc": "Mahindra Manulife",
-        "approx_3yr_cagr": 4.5,
-        "approx_5yr_cagr": None,
-        "why": "Asia Pacific REIT exposure. Income-generating real estate assets.",
-    },
-]
 
 
 # ── Allocation templates ─────────────────────────────────────────────────────
@@ -490,87 +185,91 @@ def get_allocation(risk: str, age: int, horizon: int) -> dict[str, float]:
     return adjust_allocation_for_age(base, age, horizon)
 
 
-def pick_funds(allocation: dict[str, float], budget: int) -> list[dict]:
-    """
-    STATIC fallback: select one fund per segment using hardcoded order.
-    Used when live data fetch is skipped or fails entirely.
-    Prefer `pick_funds_live()` for real-time ranked picks.
-    """
-    recommendations = []
-
-    for segment, pct in sorted(allocation.items(), key=lambda x: -x[1]):
-        if pct <= 0:
-            continue
-
-        candidates = [f for f in FUND_UNIVERSE if f["segment"] == segment]
-        if not candidates:
-            continue
-
-        fund = candidates[0]
-        sip_amount = round(budget * pct / 100)
-        min_sip = fund.get("min_sip", 500)
-        if sip_amount < min_sip:
-            sip_amount = min_sip
-
-        recommendations.append({
-            "fund_name":        fund["fund_name"],
-            "segment":          segment,
-            "segment_label":    SEGMENTS[segment]["label"],
-            "amc":              fund.get("amc", ""),
-            "allocation_pct":   pct,
-            "sip_amount":       sip_amount,
-            "approx_3yr_cagr":  fund.get("approx_3yr_cagr"),
-            "approx_5yr_cagr":  fund.get("approx_5yr_cagr"),
-            "expense_ratio":    fund.get("expense_ratio"),
-            "benchmark":        SEGMENTS[segment]["benchmark"],
-            "segment_description": SEGMENTS[segment]["description"],
-            "why":              fund["why"],
-        })
-
-    return recommendations
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 # LIVE DATA: fetch real returns from mfapi.in and rank funds dynamically
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Minimum fund age (years) to be considered for recommendation
+_MIN_TRACK_RECORD_YRS = 3
+
+
+def _generate_why(fund: dict) -> str:
+    """Generate a brief 'why' note for a dynamically discovered fund."""
+    parts = []
+    r5 = fund.get("live_return_5yr")
+    r10 = fund.get("live_return_10yr")
+    r15 = fund.get("live_return_15yr")
+    age = fund.get("live_fund_age_years")
+
+    if r15 is not None:
+        parts.append(f"15yr CAGR of {r15}% — proven long-term compounder")
+    elif r10 is not None:
+        parts.append(f"10yr CAGR of {r10}% — decade-long track record")
+    elif r5 is not None:
+        parts.append(f"5yr CAGR of {r5}%")
+
+    if age and age >= 10:
+        parts.append(f"{age:.0f}+ years in market")
+
+    cat = fund.get("live_fund_category")
+    if cat:
+        parts.append(cat)
+
+    return ". ".join(parts) if parts else "Dynamically discovered from mfapi.in"
+
+
 def enrich_fund_universe(segments_needed: set[str] | None = None) -> list[dict]:
     """
-    Fetch LIVE NAV + returns from mfapi.in for every fund in FUND_UNIVERSE
-    (or only for the segments listed in `segments_needed`).
+    Fetch LIVE NAV + returns from mfapi.in for fund candidates.
 
-    Uses pre-configured `scheme_code` from each fund entry for exact lookup —
-    no fuzzy name search needed.
+    Uses dynamic discovery (mfapi.in master list) to find Direct Growth funds
+    across all segments. Raises on failure (no hardcoded fallback).
 
-    Each fund dict is updated IN A COPY with:
+    Each fund dict includes:
       - live_return_1yr, live_return_3yr, live_return_5yr  (actual % from mfapi)
-      - live_nav                                           (current NAV)
-      - live_fund_category                                 (scheme category from API)
-      - live_fund_age_years                                (years since inception)
-      - data_source: "live" | "static"
+      - live_return_10yr, live_return_15yr                 (if fund is old enough)
+      - live_nav, live_fund_category, live_fund_age_years
+      - data_source: "live"
 
-    Returns the enriched list (does NOT mutate FUND_UNIVERSE).
+    Returns the enriched list.
     """
     from tools.fetch_nav import fetch_fund_returns
+    from tools.fund_discovery import discover_fund_universe
+    from config import (
+        FUND_DISCOVERY_CACHE_TTL_DAYS,
+        FUND_DISCOVERY_MAX_PER_SEGMENT,
+    )
 
-    enriched: list[dict] = []
+    # Step 1: Discover candidates dynamically (uses cache if available)
+    candidates_by_segment = discover_fund_universe(
+        segments_needed=segments_needed,
+        max_per_segment=FUND_DISCOVERY_MAX_PER_SEGMENT,
+        cache_ttl_days=FUND_DISCOVERY_CACHE_TTL_DAYS,
+    )
 
-    candidates = FUND_UNIVERSE
-    if segments_needed:
-        candidates = [f for f in FUND_UNIVERSE if f["segment"] in segments_needed]
+    # Build flat candidate list
+    candidates = []
+    for seg, funds in candidates_by_segment.items():
+        for f in funds:
+            candidates.append({
+                "fund_name": f["schemeName"],
+                "scheme_code": str(f["schemeCode"]),
+                "segment": f["segment"],
+            })
 
     total = len(candidates)
     print(f"\n[fund_universe] Fetching live data for {total} funds from mfapi.in...")
 
+    enriched: list[dict] = []
     for i, fund in enumerate(candidates):
-        fund_copy = dict(fund)  # don't mutate the global
+        fund_copy = dict(fund)
         name = fund["fund_name"]
         code = fund.get("scheme_code")
 
-        print(f"  [{i+1}/{total}] {name[:55]}...", end=" ", flush=True)
+        print(f"  [{i+1}/{total}] {name[:60]}...", end=" ", flush=True)
 
         if not code:
-            print("⚠ no scheme_code configured — using static data")
+            print("⚠ no scheme_code — skipping")
             fund_copy["data_source"] = "static"
             enriched.append(fund_copy)
             continue
@@ -581,44 +280,83 @@ def enrich_fund_universe(segments_needed: set[str] | None = None) -> list[dict]:
         fund_copy["live_return_1yr"]     = returns.get("return_1yr")
         fund_copy["live_return_3yr"]     = returns.get("return_3yr")
         fund_copy["live_return_5yr"]     = returns.get("return_5yr")
+        fund_copy["live_return_10yr"]    = returns.get("return_10yr")
+        fund_copy["live_return_15yr"]    = returns.get("return_15yr")
         fund_copy["live_fund_category"]  = returns.get("fund_category")
         fund_copy["live_fund_age_years"] = returns.get("fund_age_years")
         fund_copy["data_source"]         = "live"
 
-        r1 = fund_copy["live_return_1yr"]
-        r3 = fund_copy["live_return_3yr"]
-        r5 = fund_copy["live_return_5yr"]
-        print(f"✓ 1yr={r1}% | 3yr={r3}% | 5yr={r5}%")
+        # Generate 'why' for dynamically discovered funds
+        if "why" not in fund_copy:
+            fund_copy["why"] = _generate_why(fund_copy)
+
+        r1  = fund_copy["live_return_1yr"]
+        r3  = fund_copy["live_return_3yr"]
+        r5  = fund_copy["live_return_5yr"]
+        r10 = fund_copy["live_return_10yr"]
+        r15 = fund_copy["live_return_15yr"]
+
+        parts = [f"✓ 1yr={r1}%", f"3yr={r3}%", f"5yr={r5}%"]
+        if r10 is not None:
+            parts.append(f"10yr={r10}%")
+        if r15 is not None:
+            parts.append(f"15yr={r15}%")
+        print(" | ".join(parts))
 
         enriched.append(fund_copy)
         time.sleep(0.3)  # gentle rate limit
 
+    # Filter out funds below minimum track record
+    before = len(enriched)
+    enriched = [
+        f for f in enriched
+        if (f.get("live_fund_age_years") or 0) >= _MIN_TRACK_RECORD_YRS
+    ]
+    dropped = before - len(enriched)
+    if dropped:
+        print(f"[fund_universe] Dropped {dropped} funds with <{_MIN_TRACK_RECORD_YRS}yr track record")
+
     live_count = sum(1 for f in enriched if f.get("data_source") == "live")
-    print(f"[fund_universe] Done. {live_count}/{total} funds enriched with live data.\n")
+    print(f"[fund_universe] Done. {live_count}/{len(enriched)} funds enriched with live data.\n")
     return enriched
 
 
 def _rank_score(fund: dict) -> float:
     """
-    Compute a composite score for ranking funds within a segment.
-    Weights: 3yr CAGR (50%), 5yr CAGR (30%), 1yr return (20%).
-    Uses live data if available, falls back to static approx figures.
+    Composite score for ranking funds within a segment.
+
+    Weights when all periods are available:
+      1yr: 15%,  3yr: 30%,  5yr: 25%,  10yr: 18%,  15yr: 12%
+
+    Gracefully degrades when longer periods are missing by
+    redistributing their weights proportionally among available periods.
     """
-    def _get(key_live: str, key_static: str) -> float:
-        val = fund.get(key_live)
-        if val is None:
-            val = fund.get(key_static)
-        return float(val) if val is not None else 0.0
+    def _val(key: str) -> float | None:
+        v = fund.get(key)
+        if v is None:
+            return None
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return None
 
-    r1 = _get("live_return_1yr", "approx_3yr_cagr")  # 1yr not in static → use 3yr as proxy
-    r3 = _get("live_return_3yr", "approx_3yr_cagr")
-    r5 = _get("live_return_5yr", "approx_5yr_cagr")
+    # Gather available periods with their base weights
+    periods = [
+        (_val("live_return_1yr"),  0.15),
+        (_val("live_return_3yr"),  0.30),
+        (_val("live_return_5yr"),  0.25),
+        (_val("live_return_10yr"), 0.18),
+        (_val("live_return_15yr"), 0.12),
+    ]
 
-    # For live data, use actual 1yr
-    if fund.get("live_return_1yr") is not None:
-        r1 = float(fund["live_return_1yr"])
+    available = [(val, wt) for val, wt in periods if val is not None]
+    if not available:
+        return 0.0
 
-    return r3 * 0.50 + r5 * 0.30 + r1 * 0.20
+    # Redistribute weights proportionally among available periods
+    total_wt = sum(wt for _, wt in available)
+    score = sum(val * (wt / total_wt) for val, wt in available)
+    return score
 
 
 def pick_funds_live(
@@ -628,7 +366,7 @@ def pick_funds_live(
 ) -> list[dict]:
     """
     Select the BEST fund per segment using live return data.
-    Ranks candidates by composite score (3yr/5yr/1yr weighted)
+    Ranks candidates by composite score (1yr/3yr/5yr/10yr/15yr weighted)
     and picks the top performer.
 
     Returns a list of recommendation dicts with live data attached.
@@ -641,10 +379,7 @@ def pick_funds_live(
 
         candidates = [f for f in enriched_universe if f["segment"] == segment]
         if not candidates:
-            # Fallback to static universe
-            candidates = [f for f in FUND_UNIVERSE if f["segment"] == segment]
-            if not candidates:
-                continue
+            continue
 
         # Rank by composite score (highest first)
         ranked = sorted(candidates, key=_rank_score, reverse=True)
@@ -655,10 +390,11 @@ def pick_funds_live(
         if sip_amount < min_sip:
             sip_amount = min_sip
 
-        # Use live returns if available, else fallback to static
-        return_1yr = best.get("live_return_1yr")
-        return_3yr = best.get("live_return_3yr", best.get("approx_3yr_cagr"))
-        return_5yr = best.get("live_return_5yr", best.get("approx_5yr_cagr"))
+        return_1yr  = best.get("live_return_1yr")
+        return_3yr  = best.get("live_return_3yr")
+        return_5yr  = best.get("live_return_5yr")
+        return_10yr = best.get("live_return_10yr")
+        return_15yr = best.get("live_return_15yr")
 
         # Build comparison note showing why this fund was picked
         runner_up_note = ""
@@ -682,16 +418,19 @@ def pick_funds_live(
             "live_return_1yr":    return_1yr,
             "live_return_3yr":    return_3yr,
             "live_return_5yr":    return_5yr,
+            "live_return_10yr":   return_10yr,
+            "live_return_15yr":   return_15yr,
             "live_nav":           best.get("live_nav"),
             "live_fund_category": best.get("live_fund_category"),
+            "live_fund_age_years": best.get("live_fund_age_years"),
             "data_source":        best.get("data_source", "static"),
             "expense_ratio":      best.get("expense_ratio"),
             "benchmark":          SEGMENTS[segment]["benchmark"],
             "segment_description": SEGMENTS[segment]["description"],
-            "why":                best["why"],
+            "why":                best.get("why", _generate_why(best)),
             "rank_score":         round(_rank_score(best), 2),
             "runner_up":          runner_up_note,
-            "alternatives":       [f["fund_name"] for f in ranked[1:]],
+            "alternatives":       [f["fund_name"] for f in ranked[1:4]],
         })
 
     return recommendations

@@ -21,8 +21,8 @@ from openai import OpenAI
 from config import LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, LLM_TEMPERATURE
 from tools.formatting import extract_json_from_llm
 from tools.fund_universe import (
-    get_allocation, pick_funds, pick_funds_live, enrich_fund_universe,
-    SEGMENTS, FUND_UNIVERSE, ALLOCATION_TEMPLATES,
+    get_allocation, pick_funds_live, enrich_fund_universe,
+    SEGMENTS, ALLOCATION_TEMPLATES,
 )
 
 
@@ -78,6 +78,11 @@ Return a valid JSON object with this structure:
   ]
 }
 
+When 10yr or 15yr CAGR data is available for a fund, highlight it as a strong indicator
+of consistency and quality. Funds with 10+ year track records showing steady returns
+are generally more trustworthy than newer funds with high recent returns. Mention the
+long-term track record in your reasoning when available.
+
 Be direct, specific, and encouraging. This person is starting their investment journey.
 """.strip()
 
@@ -108,21 +113,27 @@ def _build_recommender_prompt(
 
     lines.append("## Recommended Funds (ranked by live returns from mfapi.in)")
     for rec in recommendations:
-        source = rec.get("data_source", "static")
-        r1 = rec.get("live_return_1yr") if source == "live" else rec.get("approx_3yr_cagr")
-        r3 = rec.get("live_return_3yr") if source == "live" else rec.get("approx_3yr_cagr")
-        r5 = rec.get("live_return_5yr") if source == "live" else rec.get("approx_5yr_cagr")
+        r1  = rec.get("live_return_1yr")
+        r3  = rec.get("live_return_3yr")
+        r5  = rec.get("live_return_5yr")
+        r10 = rec.get("live_return_10yr")
+        r15 = rec.get("live_return_15yr")
         nav = rec.get("live_nav")
+        age = rec.get("live_fund_age_years")
 
         lines.append(f"### {rec['fund_name']}")
         lines.append(f"- Segment: {rec['segment_label']}")
         lines.append(f"- Allocation: {rec['allocation_pct']:.1f}% → ₹{rec['sip_amount']:,}/month")
-        lines.append(f"- Data Source: {source.upper()}")
+        lines.append(f"- Data Source: LIVE")
         if nav:
             lines.append(f"- Current NAV: ₹{nav:.2f}")
+        if age:
+            lines.append(f"- Fund Age: {age:.1f} years")
         lines.append(f"- 1yr Return: {r1}%" if r1 is not None else "- 1yr Return: N/A")
         lines.append(f"- 3yr CAGR: {r3}%" if r3 is not None else "- 3yr CAGR: N/A")
         lines.append(f"- 5yr CAGR: {r5}%" if r5 is not None else "- 5yr CAGR: N/A")
+        lines.append(f"- 10yr CAGR: {r10}%" if r10 is not None else "- 10yr CAGR: N/A")
+        lines.append(f"- 15yr CAGR: {r15}%" if r15 is not None else "- 15yr CAGR: N/A")
         lines.append(f"- Benchmark: {rec['benchmark']}")
         lines.append(f"- Fund Note: {rec['why']}")
         lines.append(f"- Segment Role: {rec['segment_description']}")
@@ -131,14 +142,6 @@ def _build_recommender_prompt(
         if rec.get("alternatives"):
             lines.append(f"- Alternatives considered: {', '.join(rec['alternatives'])}")
         lines.append("")
-
-    lines.append("## Alternative Funds Available (for context)")
-    for seg in allocation:
-        alts = [f for f in FUND_UNIVERSE if f["segment"] == seg]
-        if len(alts) > 1:
-            alt_names = [f["fund_name"] for f in alts[1:]]
-            label = SEGMENTS.get(seg, {}).get("label", seg)
-            lines.append(f"- {label}: {', '.join(alt_names)}")
 
     return "\n".join(lines)
 
@@ -168,25 +171,16 @@ def run_recommender(user_profile: dict) -> dict:
         label = SEGMENTS.get(seg, {}).get("label", seg)
         print(f"  {label:<25} {pct:>5.1f}%  →  ₹{round(budget * pct / 100):>,}")
 
-    # Step 2: Fetch LIVE returns from mfapi.in for all candidate funds
+    # Step 2: Discover + fetch LIVE returns from mfapi.in
     segments_needed = set(allocation.keys())
     print(f"\n[recommender] ── Fetching live fund data from mfapi.in ──")
-    try:
-        enriched_universe = enrich_fund_universe(segments_needed)
-        live_count = sum(1 for f in enriched_universe if f.get("data_source") == "live")
-        print(f"[recommender] Live data: {live_count}/{len(enriched_universe)} funds")
-    except Exception as exc:
-        print(f"[recommender] ⚠ Live fetch failed: {exc}")
-        print("[recommender] Falling back to static fund data.")
-        enriched_universe = None
+    enriched_universe = enrich_fund_universe(segments_needed)
+    live_count = sum(1 for f in enriched_universe if f.get("data_source") == "live")
+    print(f"[recommender] Live data: {live_count}/{len(enriched_universe)} funds")
 
     # Step 3: Pick best fund per segment (ranked by live returns)
-    if enriched_universe:
-        recommendations = pick_funds_live(allocation, budget, enriched_universe)
-        print(f"\n[recommender] ✓ Funds ranked by LIVE returns (mfapi.in)")
-    else:
-        recommendations = pick_funds(allocation, budget)
-        print(f"\n[recommender] Using static fund rankings (no live data)")
+    recommendations = pick_funds_live(allocation, budget, enriched_universe)
+    print(f"\n[recommender] ✓ Funds ranked by LIVE returns (mfapi.in)")
 
     total_sip = sum(r["sip_amount"] for r in recommendations)
     print(f"[recommender] {len(recommendations)} funds selected, total SIP: ₹{total_sip:,}/month")
@@ -300,23 +294,21 @@ def print_recommendations(result: dict) -> None:
 
     for rec in recs:
         icon = SEGMENT_ICON.get(rec["segment"], "•")
-        source = rec.get("data_source", "static")
 
-        # Prefer live data, fallback to static
-        if source == "live":
-            r1 = f"{rec['live_return_1yr']}%" if rec.get("live_return_1yr") is not None else "N/A"
-            r3 = f"{rec['live_return_3yr']}%" if rec.get("live_return_3yr") is not None else "N/A"
-            r5 = f"{rec['live_return_5yr']}%" if rec.get("live_return_5yr") is not None else "N/A"
-            data_tag = "[LIVE]"
-        else:
-            r3 = f"{rec['approx_3yr_cagr']}%" if rec.get("approx_3yr_cagr") else "N/A"
-            r5 = f"{rec['approx_5yr_cagr']}%" if rec.get("approx_5yr_cagr") else "N/A"
-            r1 = "N/A"
-            data_tag = "[static]"
+        r1 = f"{rec['live_return_1yr']}%" if rec.get("live_return_1yr") is not None else "N/A"
+        r3 = f"{rec['live_return_3yr']}%" if rec.get("live_return_3yr") is not None else "N/A"
+        r5 = f"{rec['live_return_5yr']}%" if rec.get("live_return_5yr") is not None else "N/A"
 
         print(f"\n  {icon} {rec['segment_label']} — {rec['allocation_pct']:.0f}% of portfolio")
-        print(f"     {rec['fund_name']}  {data_tag}")
-        print(f"     SIP: ₹{rec['sip_amount']:,}/month  |  1yr: {r1}  |  3yr: {r3}  |  5yr: {r5}")
+        print(f"     {rec['fund_name']}  [LIVE]")
+
+        returns_line = f"     SIP: ₹{rec['sip_amount']:,}/month  |  1yr: {r1}  |  3yr: {r3}  |  5yr: {r5}"
+        if rec.get("live_return_10yr") is not None:
+            returns_line += f"  |  10yr: {rec['live_return_10yr']}%"
+        if rec.get("live_return_15yr") is not None:
+            returns_line += f"  |  15yr: {rec['live_return_15yr']}%"
+        print(returns_line)
+
         if rec.get("runner_up"):
             print(f"     Ranking: {rec['runner_up']}")
         print(f"     → {rec.get('reasoning', rec['why'])}")

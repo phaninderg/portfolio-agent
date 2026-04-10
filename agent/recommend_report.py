@@ -361,19 +361,11 @@ def _fund_card(rec: dict) -> str:
     seg   = rec["segment"]
     color = SEGMENT_COLOR.get(seg, "#94a3b8")
     icon  = SEGMENT_ICON.get(seg, "•")
-    source = rec.get("data_source", "static")
 
-    # Prefer live data, fallback to static approx
-    if source == "live":
-        r1 = _pct(rec.get("live_return_1yr")) if rec.get("live_return_1yr") is not None else "N/A"
-        r3 = _pct(rec.get("live_return_3yr")) if rec.get("live_return_3yr") is not None else "N/A"
-        r5 = _pct(rec.get("live_return_5yr")) if rec.get("live_return_5yr") is not None else "N/A"
-        source_badge = '<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:#dcfce7;color:#16a34a;font-weight:700">LIVE</span>'
-    else:
-        r1 = "N/A"
-        r3 = _pct(rec.get("approx_3yr_cagr")) if rec.get("approx_3yr_cagr") else "N/A"
-        r5 = _pct(rec.get("approx_5yr_cagr")) if rec.get("approx_5yr_cagr") else "N/A"
-        source_badge = '<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:#fef3c7;color:#92400e;font-weight:700">STATIC</span>'
+    r1 = _pct(rec.get("live_return_1yr")) if rec.get("live_return_1yr") is not None else "N/A"
+    r3 = _pct(rec.get("live_return_3yr")) if rec.get("live_return_3yr") is not None else "N/A"
+    r5 = _pct(rec.get("live_return_5yr")) if rec.get("live_return_5yr") is not None else "N/A"
+    source_badge = '<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:#dcfce7;color:#16a34a;font-weight:700">LIVE</span>'
 
     nav_html = f"NAV: ₹{rec['live_nav']:.2f}" if rec.get("live_nav") else ""
 
@@ -389,6 +381,27 @@ def _fund_card(rec: dict) -> str:
     if rec.get("alternatives"):
         alts = ", ".join(rec["alternatives"][:2])
         alt_html = f'<div style="font-size:10px;color:#94a3b8;margin-top:4px">Also considered: {alts}</div>'
+
+    # Build stats grid — always show allocation + 1yr/3yr/5yr, conditionally add 10yr/15yr
+    stats = [
+        ("Allocation", f"{rec['allocation_pct']:.0f}%", color),
+        ("1yr Return", r1, "#16a34a"),
+        ("3yr CAGR", r3, "#16a34a"),
+        ("5yr CAGR", r5, "#16a34a"),
+    ]
+    if rec.get("live_return_10yr") is not None:
+        stats.append(("10yr CAGR", _pct(rec["live_return_10yr"]), "#16a34a"))
+    if rec.get("live_return_15yr") is not None:
+        stats.append(("15yr CAGR", _pct(rec["live_return_15yr"]), "#16a34a"))
+
+    n_cols = len(stats)
+    stats_html = ""
+    for label, val, clr in stats:
+        stats_html += f"""
+        <div class="stat">
+          <div class="stat-label">{label}</div>
+          <div class="stat-val" style="color:{clr}">{val}</div>
+        </div>"""
 
     return f"""
     <div class="fund-card" style="border-left-color:{color}">
@@ -407,23 +420,8 @@ def _fund_card(rec: dict) -> str:
         </div>
       </div>
 
-      <div class="fund-stats" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat">
-          <div class="stat-label">Allocation</div>
-          <div class="stat-val" style="color:{color}">{rec['allocation_pct']:.0f}%</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">1yr Return</div>
-          <div class="stat-val" style="color:#16a34a">{r1}</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">3yr CAGR</div>
-          <div class="stat-val" style="color:#16a34a">{r3}</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">5yr CAGR</div>
-          <div class="stat-val" style="color:#16a34a">{r5}</div>
-        </div>
+      <div class="fund-stats" style="grid-template-columns:repeat({n_cols},1fr)">
+        {stats_html}
       </div>
 
       {"<div style='font-size:11px;color:#64748b;margin-bottom:8px'>" + nav_html + "</div>" if nav_html else ""}

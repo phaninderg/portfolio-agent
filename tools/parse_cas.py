@@ -175,16 +175,3 @@ def parse_cas(pdf_path: str, password: str) -> list[dict]:
 
     print(f"[parse_cas] Active holdings: {len(holdings)}")
     return holdings
-
-
-# ── CLI ───────────────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from config import CAS_PDF_PATH, CAS_PASSWORD
-
-    holdings = parse_cas(CAS_PDF_PATH, CAS_PASSWORD)
-    for h in holdings:
-        h.pop("transactions", None)
-    print(json.dumps(holdings, indent=2, default=str))

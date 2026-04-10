@@ -1,7 +1,7 @@
 """
 Research Agent — Tool: fetch_nav.py
-Resolves fund names → scheme codes and fetches 1yr / 3yr / 5yr returns
-from mfapi.in historical NAV data.
+Resolves fund names → scheme codes and fetches 1yr / 3yr / 5yr / 10yr / 15yr
+returns from mfapi.in historical NAV data.
 """
 
 from __future__ import annotations
@@ -9,7 +9,6 @@ import json
 import time
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any
 
 import requests
 
@@ -21,9 +20,11 @@ MFAPI_BASE   = "https://api.mfapi.in/mf"
 MFAPI_SEARCH = "https://api.mfapi.in/mf/search"
 
 # Approx trading days per year (used to step back in NAV array)
-DAYS_1YR = 365
-DAYS_3YR = 365 * 3
-DAYS_5YR = 365 * 5
+DAYS_1YR  = 365
+DAYS_3YR  = 365 * 3
+DAYS_5YR  = 365 * 5
+DAYS_10YR = 365 * 10
+DAYS_15YR = 365 * 15
 
 
 # ── scheme code cache ─────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ def _find_nav_n_days_ago(nav_history: list[dict], days: int) -> float | None:
         try:
             d_str = entry["date"]          # DD-MM-YYYY
             d = date(int(d_str[6:]), int(d_str[3:5]), int(d_str[:2]))
-        except Exception:
+        except (KeyError, ValueError, IndexError):
             continue
         delta = abs((d - target).days)
         if best_delta is None or delta < best_delta:
@@ -153,7 +154,7 @@ def _compute_cagr(nav_old, nav_new, years):
 
 def fetch_fund_returns(scheme_code: str) -> dict:
     """
-    Fetch NAV history and compute 1yr / 3yr / 5yr returns.
+    Fetch NAV history and compute 1yr / 3yr / 5yr / 10yr / 15yr returns.
     Also extracts current NAV, fund category, AUM, expense ratio.
     Returns a dict with all fields (None if data unavailable).
     """
@@ -163,6 +164,8 @@ def fetch_fund_returns(scheme_code: str) -> dict:
         "return_1yr":     None,
         "return_3yr":     None,
         "return_5yr":     None,
+        "return_10yr":    None,
+        "return_15yr":    None,
         "fund_category":  None,
         "aum_cr":         None,
         "expense_ratio":  None,
@@ -204,17 +207,21 @@ def fetch_fund_returns(scheme_code: str) -> dict:
         oldest_str = nav_history[-1]["date"]
         oldest = date(int(oldest_str[6:]), int(oldest_str[3:5]), int(oldest_str[:2]))
         result["fund_age_years"] = round((date.today() - oldest).days / 365, 1)
-    except Exception:
+    except (KeyError, ValueError, IndexError):
         pass
 
-    nav_now = result["current_nav"]
-    nav_1y  = _find_nav_n_days_ago(nav_history, DAYS_1YR)
-    nav_3y  = _find_nav_n_days_ago(nav_history, DAYS_3YR)
-    nav_5y  = _find_nav_n_days_ago(nav_history, DAYS_5YR)
+    nav_now  = result["current_nav"]
+    nav_1y   = _find_nav_n_days_ago(nav_history, DAYS_1YR)
+    nav_3y   = _find_nav_n_days_ago(nav_history, DAYS_3YR)
+    nav_5y   = _find_nav_n_days_ago(nav_history, DAYS_5YR)
+    nav_10y  = _find_nav_n_days_ago(nav_history, DAYS_10YR)
+    nav_15y  = _find_nav_n_days_ago(nav_history, DAYS_15YR)
 
-    result["return_1yr"] = _compute_return(nav_1y, nav_now)
-    result["return_3yr"] = _compute_cagr(nav_3y, nav_now, 3)
-    result["return_5yr"] = _compute_cagr(nav_5y, nav_now, 5)
+    result["return_1yr"]  = _compute_return(nav_1y, nav_now)
+    result["return_3yr"]  = _compute_cagr(nav_3y, nav_now, 3)
+    result["return_5yr"]  = _compute_cagr(nav_5y, nav_now, 5)
+    result["return_10yr"] = _compute_cagr(nav_10y, nav_now, 10)
+    result["return_15yr"] = _compute_cagr(nav_15y, nav_now, 15)
 
     return result
 
@@ -246,30 +253,21 @@ def enrich_holdings_with_returns(holdings: list[dict]) -> list[dict]:
 
         returns = fetch_fund_returns(code)
         h.update(returns)
-        print(
-            f"  ✓ code={code} | NAV={returns['current_nav']} | "
-            f"1yr={returns['return_1yr']}% | 3yr={returns['return_3yr']}% | "
-            f"5yr={returns['return_5yr']}% | cat={returns['fund_category']}"
-        )
+        parts = [
+            f"  ✓ code={code} | NAV={returns['current_nav']}",
+            f"1yr={returns['return_1yr']}%",
+            f"3yr={returns['return_3yr']}%",
+            f"5yr={returns['return_5yr']}%",
+        ]
+        if returns.get("return_10yr") is not None:
+            parts.append(f"10yr={returns['return_10yr']}%")
+        if returns.get("return_15yr") is not None:
+            parts.append(f"15yr={returns['return_15yr']}%")
+        parts.append(f"cat={returns['fund_category']}")
+        print(" | ".join(parts))
         enriched.append(h)
         time.sleep(0.3)   # gentle rate limiting
 
     _save_scheme_cache(cache)
     print(f"\n[fetch_nav] Done. Scheme code cache saved → {_SCHEME_CODES_FILE}")
     return enriched
-
-
-# ── CLI ───────────────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from tools.parse_cas import parse_cas
-    from config import CAS_PDF_PATH, CAS_PASSWORD
-
-    holdings = parse_cas(CAS_PDF_PATH, CAS_PASSWORD)
-    enriched = enrich_holdings_with_returns(holdings)
-    # Print without full transaction history to keep it readable
-    for h in enriched:
-        h.pop("transactions", None)
-    print(json.dumps(enriched, indent=2, default=str))

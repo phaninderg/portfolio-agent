@@ -43,7 +43,7 @@ Return a single valid JSON object (no extra text):
 ## DEFINITIONS
 
 trend:
-  stable_outperformer   → beats benchmark on 1yr AND 3yr AND 5yr alpha
+  stable_outperformer   → beats benchmark on 1yr AND 3yr AND 5yr alpha (bonus if 10yr/15yr also positive)
   recent_underperformer → positive 3yr/5yr alpha but negative 1yr alpha
   momentum_chaser       → strong 1yr alpha but weak/negative 3yr or 5yr alpha
   consistent_laggard    → negative alpha across all available horizons
@@ -64,21 +64,26 @@ downside_protection:
   weak    → fund 1yr return more than 3% below benchmark
 
 consistency:
-  consistent   → trend direction same across 1yr, 3yr, 5yr
+  consistent   → trend direction same across all available horizons (1yr through 15yr)
   mixed        → outperforms on some horizons, underperforms on others
   inconsistent → no clear pattern
 
 red_flags (examples):
   - "Negative XIRR despite X years of investment"
-  - "Consistent laggard across all 3 horizons"
+  - "Consistent laggard across all horizons"
   - "Sectoral fund with high concentration risk"
   - "1yr return X% below benchmark"
   - "AUM declining" (if data available)
 
 green_flags (examples):
-  - "Beats benchmark across all 3 horizons"
+  - "Beats benchmark across all available horizons"
   - "Strong XIRR of X% over Y years"
   - "Outperforming in sideways/bear market"
+  - "10yr/15yr CAGR shows long-term consistency"
+
+When 10yr or 15yr data is available, it is a strong signal of long-term quality.
+A fund with positive alpha across 10+ years is far more reliable than one with
+only 3yr track record. Highlight long-term performance in your score_notes.
 
 Be objective. Use numbers. Do not recommend actions.
 """.strip()
@@ -104,6 +109,12 @@ def _build_analyst_prompt(holding: dict, market_condition: str) -> str:
         f"| 3yr     | {fmt_pct(h.get('return_3yr'))} | {fmt_pct(h.get('benchmark_return_3yr'))} | {fmt_pct(h.get('alpha_3yr'))} |",
         f"| 5yr     | {fmt_pct(h.get('return_5yr'))} | {fmt_pct(h.get('benchmark_return_5yr'))} | {fmt_pct(h.get('alpha_5yr'))} |",
     ]
+
+    # Add 10yr/15yr rows if data is available
+    if h.get("return_10yr") is not None or h.get("benchmark_return_10yr") is not None:
+        lines.append(f"| 10yr    | {fmt_pct(h.get('return_10yr'))} | {fmt_pct(h.get('benchmark_return_10yr'))} | {fmt_pct(h.get('alpha_10yr'))} |")
+    if h.get("return_15yr") is not None or h.get("benchmark_return_15yr") is not None:
+        lines.append(f"| 15yr    | {fmt_pct(h.get('return_15yr'))} | {fmt_pct(h.get('benchmark_return_15yr'))} | {fmt_pct(h.get('alpha_15yr'))} |")
     return "\n".join(lines)
 
 
