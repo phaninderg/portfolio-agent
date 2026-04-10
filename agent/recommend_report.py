@@ -174,8 +174,7 @@ def generate_recommend_report(result: dict, output_path: str) -> str:
   .sip-badge {{ padding: 6px 14px; border-radius: 8px; font-size: 13px;
                 font-weight: 800; white-space: nowrap; }}
 
-  .fund-stats {{ display: grid; grid-template-columns: repeat(3, 1fr);
-                 gap: 10px; margin-bottom: 12px; }}
+  .fund-stats {{ display: grid; gap: 10px; margin-bottom: 12px; }}
   .stat .stat-label {{ font-size: 10px; color: #94a3b8; text-transform: uppercase;
                        letter-spacing: 0.3px; }}
   .stat .stat-val {{ font-size: 15px; font-weight: 700; }}

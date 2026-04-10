@@ -253,10 +253,9 @@ def generate_report(
   .fin-item .fin-val {{ font-size: 14px; font-weight: 700; }}
 
   /* Returns table */
-  .returns-row {{ display: grid; grid-template-columns: 60px repeat(3, 1fr);
-                  gap: 4px; font-size: 11px; margin-bottom: 2px; }}
+  .returns-row {{ display: grid; gap: 4px; font-size: 11px; margin-bottom: 2px; }}
   .returns-row .rh {{ color: #64748b; font-weight: 600; }}
-  .returns-row .rv {{ font-weight: 600; }}
+  .returns-row .rv {{ font-weight: 600; text-align: center; }}
 
   /* Chart */
   .chart-wrap {{ height: 90px; margin: 14px 0 10px; }}
@@ -401,6 +400,48 @@ def _verdict_chip_html(verdict: str, count: int) -> str:
       style="background:{s['bg']};color:{s['color']};border:1px solid {s['color']}44">
       {s['icon']} {verdict}: {count}
     </span>"""
+
+
+def _returns_table(h: dict) -> str:
+    """Build a dynamic returns grid that adapts to available horizons."""
+    # Determine which periods have data
+    periods = [("1yr", "return_1yr", "benchmark_return_1yr", "alpha_1yr"),
+               ("3yr", "return_3yr", "benchmark_return_3yr", "alpha_3yr"),
+               ("5yr", "return_5yr", "benchmark_return_5yr", "alpha_5yr")]
+
+    if h.get("return_10yr") is not None or h.get("benchmark_return_10yr") is not None:
+        periods.append(("10yr", "return_10yr", "benchmark_return_10yr", "alpha_10yr"))
+    if h.get("return_15yr") is not None or h.get("benchmark_return_15yr") is not None:
+        periods.append(("15yr", "return_15yr", "benchmark_return_15yr", "alpha_15yr"))
+
+    n_cols = len(periods)
+    grid_css = f"grid-template-columns: 50px repeat({n_cols}, 1fr)"
+
+    # Header row
+    hdr = f'<div class="returns-row" style="{grid_css}"><span class="rh"></span>'
+    for label, *_ in periods:
+        hdr += f'<span class="rh">{label}</span>'
+    hdr += '</div>'
+
+    # Fund row
+    fund_row = f'<div class="returns-row" style="{grid_css}"><span class="rh">Fund</span>'
+    for _, fkey, *_ in periods:
+        fund_row += f'<span class="rv" style="{_color_pct(h.get(fkey))}">{_pct(h.get(fkey))}</span>'
+    fund_row += '</div>'
+
+    # Benchmark row
+    bm_row = f'<div class="returns-row" style="{grid_css}"><span class="rh">Bench</span>'
+    for _, _, bkey, _ in periods:
+        bm_row += f'<span class="rv" style="color:#64748b">{_pct(h.get(bkey))}</span>'
+    bm_row += '</div>'
+
+    # Alpha row
+    alpha_row = f'<div class="returns-row" style="{grid_css}"><span class="rh">Alpha</span>'
+    for _, _, _, akey in periods:
+        alpha_row += f'<span class="rv" style="{_color_pct(h.get(akey))}">{_pct(h.get(akey))}</span>'
+    alpha_row += '</div>'
+
+    return hdr + fund_row + bm_row + alpha_row
 
 
 def _fund_card_html(h: dict, verdict: dict) -> str:
@@ -560,38 +601,7 @@ def _fund_card_html(h: dict, verdict: dict) -> str:
 
     <!-- Returns detail -->
     <div style="margin-bottom:10px">
-      <div class="returns-row">
-        <span class="rh"></span>
-        <span class="rh">1yr</span>
-        <span class="rh">3yr</span>
-        <span class="rh">5yr</span>
-        {"<span class='rh'>10yr</span>" if h.get('return_10yr') is not None or h.get('benchmark_return_10yr') is not None else ""}
-        {"<span class='rh'>15yr</span>" if h.get('return_15yr') is not None or h.get('benchmark_return_15yr') is not None else ""}
-      </div>
-      <div class="returns-row">
-        <span class="rh">Fund</span>
-        <span class="rv" style="{_color_pct(h.get('return_1yr'))}">{_pct(h.get('return_1yr'))}</span>
-        <span class="rv" style="{_color_pct(h.get('return_3yr'))}">{_pct(h.get('return_3yr'))}</span>
-        <span class="rv" style="{_color_pct(h.get('return_5yr'))}">{_pct(h.get('return_5yr'))}</span>
-        {"<span class='rv' style='" + _color_pct(h.get('return_10yr')) + "'>" + _pct(h.get('return_10yr')) + "</span>" if h.get('return_10yr') is not None else ""}
-        {"<span class='rv' style='" + _color_pct(h.get('return_15yr')) + "'>" + _pct(h.get('return_15yr')) + "</span>" if h.get('return_15yr') is not None else ""}
-      </div>
-      <div class="returns-row">
-        <span class="rh">Bench</span>
-        <span class="rv" style="color:#64748b">{_pct(h.get('benchmark_return_1yr'))}</span>
-        <span class="rv" style="color:#64748b">{_pct(h.get('benchmark_return_3yr'))}</span>
-        <span class="rv" style="color:#64748b">{_pct(h.get('benchmark_return_5yr'))}</span>
-        {"<span class='rv' style='color:#64748b'>" + _pct(h.get('benchmark_return_10yr')) + "</span>" if h.get('benchmark_return_10yr') is not None else ""}
-        {"<span class='rv' style='color:#64748b'>" + _pct(h.get('benchmark_return_15yr')) + "</span>" if h.get('benchmark_return_15yr') is not None else ""}
-      </div>
-      <div class="returns-row">
-        <span class="rh">Alpha</span>
-        <span class="rv" style="{_color_pct(h.get('alpha_1yr'))}">{_pct(h.get('alpha_1yr'))}</span>
-        <span class="rv" style="{_color_pct(h.get('alpha_3yr'))}">{_pct(h.get('alpha_3yr'))}</span>
-        <span class="rv" style="{_color_pct(h.get('alpha_5yr'))}">{_pct(h.get('alpha_5yr'))}</span>
-        {"<span class='rv' style='" + _color_pct(h.get('alpha_10yr')) + "'>" + _pct(h.get('alpha_10yr')) + "</span>" if h.get('alpha_10yr') is not None else ""}
-        {"<span class='rv' style='" + _color_pct(h.get('alpha_15yr')) + "'>" + _pct(h.get('alpha_15yr')) + "</span>" if h.get('alpha_15yr') is not None else ""}
-      </div>
+      {_returns_table(h)}
     </div>
 
     {flags_html}
