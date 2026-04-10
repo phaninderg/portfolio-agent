@@ -254,7 +254,8 @@ def generate_report(
 
   /* Returns table */
   .returns-row {{ display: grid; gap: 4px; font-size: 11px; margin-bottom: 2px; }}
-  .returns-row .rh {{ color: #64748b; font-weight: 600; }}
+  .returns-row .rh {{ color: #64748b; font-weight: 600; text-align: center; }}
+  .returns-row .rh:first-child {{ text-align: left; }}
   .returns-row .rv {{ font-weight: 600; text-align: center; }}
 
   /* Chart */

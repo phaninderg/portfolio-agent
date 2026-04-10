@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Advisor Report — 10 Apr 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          background: #f8fafc; color: #1e293b; font-size: 14px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Header */
+  .header { background: #1e293b; color: white; padding: 24px 32px;
+             border-radius: 12px; margin-bottom: 24px; }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { color: #94a3b8; font-size: 13px; }
+
+  /* Dashboard grid */
+  .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 16px; margin-bottom: 24px; }
+  .metric { background: white; border-radius: 10px; padding: 20px;
+             box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .metric .label { font-size: 11px; font-weight: 600; text-transform: uppercase;
+                    letter-spacing: 0.5px; color: #64748b; margin-bottom: 8px; }
+  .metric .value { font-size: 22px; font-weight: 700; }
+  .metric .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+  /* Market banner */
+  .market-banner { border-radius: 10px; padding: 16px 24px; margin-bottom: 24px;
+                    background: #fffbeb; border: 1px solid #f59e0b33; }
+  .market-banner h3 { font-size: 15px; font-weight: 700; color: #f59e0b;
+                       margin-bottom: 12px; }
+  .benchmark-grid { display: flex; flex-wrap: wrap; gap: 20px; }
+  .bm-item { font-size: 12px; }
+  .bm-item .bm-name { color: #64748b; margin-bottom: 2px; }
+  .bm-item .bm-vals { font-weight: 600; }
+
+  /* Action summary */
+  .action-summary { background: white; border-radius: 10px; padding: 20px 24px;
+                     box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px; }
+  .action-summary h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+  .verdict-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .verdict-chip { padding: 6px 14px; border-radius: 20px; font-size: 12px;
+                   font-weight: 600; }
+
+  /* Fund cards */
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px;
+                    color: #1e293b; }
+  .fund-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+                gap: 16px; margin-bottom: 32px; }
+  .fund-card { background: white; border-radius: 12px; padding: 20px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                border-left: 4px solid #e2e8f0; }
+  .card-header { display: flex; justify-content: space-between;
+                  align-items: flex-start; margin-bottom: 14px; }
+  .fund-name { font-size: 13px; font-weight: 700; color: #1e293b;
+                max-width: 65%; line-height: 1.4; }
+  .fund-meta { font-size: 11px; color: #64748b; margin-top: 3px; }
+  .verdict-badge { padding: 5px 12px; border-radius: 20px; font-size: 11px;
+                    font-weight: 700; white-space: nowrap; }
+  .trend-badge { display: inline-block; padding: 2px 8px; border-radius: 4px;
+                  font-size: 10px; font-weight: 600; margin-top: 4px; color: white; }
+
+  /* Financials row */
+  .financials { display: grid; grid-template-columns: repeat(4, 1fr);
+                 gap: 8px; margin-bottom: 14px; }
+  .fin-item .fin-label { font-size: 10px; color: #94a3b8;
+                          text-transform: uppercase; letter-spacing: 0.3px; }
+  .fin-item .fin-val { font-size: 14px; font-weight: 700; }
+
+  /* Returns table */
+  .returns-row { display: grid; gap: 4px; font-size: 11px; margin-bottom: 2px; }
+  .returns-row .rh { color: #64748b; font-weight: 600; text-align: center; }
+  .returns-row .rh:first-child { text-align: left; }
+  .returns-row .rv { font-weight: 600; text-align: center; }
+
+  /* Chart */
+  .chart-wrap { height: 90px; margin: 14px 0 10px; }
+
+  /* Reasoning */
+  .reasoning { font-size: 12px; color: #475569; line-height: 1.6;
+                background: #f8fafc; border-radius: 6px; padding: 10px 12px;
+                margin-top: 8px; }
+  .switch-to { font-size: 11px; color: #7c3aed; font-weight: 600;
+                margin-top: 6px; }
+
+  /* Flags */
+  .flags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .flag { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .flag.red { background: #fee2e2; color: #dc2626; }
+  .flag.green { background: #dcfce7; color: #16a34a; }
+
+  /* Action items */
+  .action-items { background: white; border-radius: 12px; padding: 24px;
+                   box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .action-items h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .action-item { display: flex; align-items: flex-start; gap: 12px;
+                  padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+  .action-item:last-child { border-bottom: none; }
+  .action-num { font-size: 11px; font-weight: 700; color: #94a3b8; min-width: 20px; }
+  .action-content .action-verdict { font-size: 12px; font-weight: 700; }
+  .action-content .action-fund { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .action-content .action-reason { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* Footer */
+  .footer { text-align: center; color: #94a3b8; font-size: 11px;
+             margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Portfolio Advisor Report</h1>
+    <div class="subtitle">
+      Generated 10 April 2026 &nbsp;·&nbsp;
+      Retirement corpus &nbsp;·&nbsp;
+      20yr horizon &nbsp;·&nbsp;
+      Risk: Aggressive &nbsp;·&nbsp;
+      All data is local — no portfolio data sent externally
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="metric">
+      <div class="label">Total Invested</div>
+      <div class="value">₹888,000</div>
+    </div>
+    <div class="metric">
+      <div class="label">Current Value</div>
+      <div class="value">₹1,159,000</div>
+    </div>
+    <div class="metric">
+      <div class="label">Overall P&L</div>
+      <div class="value" style="color:#16a34a">₹271,000</div>
+      <div class="sub" style="color:#16a34a">+30.52%</div>
+    </div>
+    <div class="metric">
+      <div class="label">Portfolio XIRR</div>
+      <div class="value" style="color:#16a34a">+173.31%</div>
+      <div class="sub">annualised</div>
+    </div>
+    <div class="metric">
+      <div class="label">Active Funds</div>
+      <div class="value">9</div>
+    </div>
+  </div>
+
+  <!-- Market Banner -->
+  <div class="market-banner">
+    <h3>↔ Sideways Market</h3>
+    <div class="benchmark-grid">
+      
+    <div class="bm-item">
+      <div class="bm-name">Nifty 50</div>
+      <div class="bm-vals">
+        1yr: <span style="color:#16a34a">+6.50%</span> &nbsp;
+        3yr: <span style="color:#16a34a">+11.30%</span> &nbsp;
+        5yr: <span style="color:#16a34a">+11.70%</span>
+      </div>
+    </div>
+    <div class="bm-item">
+      <div class="bm-name">Nifty Midcap 150</div>
+      <div class="bm-vals">
+        1yr: <span style="color:#16a34a">+13.10%</span> &nbsp;
+        3yr: <span style="color:#16a34a">+22.40%</span> &nbsp;
+        5yr: <span style="color:#16a34a">+19.60%</span>
+      </div>
+    </div>
+    <div class="bm-item">
+      <div class="bm-name">Nifty BeES (Flexi proxy)</div>
+      <div class="bm-vals">
+        1yr: <span style="color:#16a34a">+5.10%</span> &nbsp;
+        3yr: <span style="color:#16a34a">+11.30%</span> &nbsp;
+        5yr: <span style="color:#16a34a">+11.70%</span>
+      </div>
+    </div>
+    <div class="bm-item">
+      <div class="bm-name">Nippon ETF (SmallCap proxy)</div>
+      <div class="bm-vals">
+        1yr: <span style="color:#16a34a">+5.00%</span> &nbsp;
+        3yr: <span style="color:#16a34a">+15.20%</span> &nbsp;
+        5yr: <span style="color:#16a34a">+18.00%</span>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Action Summary -->
+  <div class="action-summary">
+    <h2>Action Summary</h2>
+    <div class="verdict-chips">
+      <span class="verdict-chip"
+      style="background:#f0fdf4;color:#22c55e;border:1px solid #22c55e44">
+      ✅ CONTINUE: 1
+    </span><span class="verdict-chip"
+      style="background:#dcfce7;color:#16a34a;border:1px solid #16a34a44">
+      📈 INCREASE_SIP: 1
+    </span><span class="verdict-chip"
+      style="background:#f0f9ff;color:#0ea5e9;border:1px solid #0ea5e944">
+      ▶️ RESTART_SIP: 1
+    </span><span class="verdict-chip"
+      style="background:#fffbeb;color:#f59e0b;border:1px solid #f59e0b44">
+      📉 DECREASE_SIP: 1
+    </span><span class="verdict-chip"
+      style="background:#fffbeb;color:#f59e0b;border:1px solid #f59e0b44">
+      ⏸ PAUSE_SIP: 1
+    </span><span class="verdict-chip"
+      style="background:#fef2f2;color:#ef4444;border:1px solid #ef444444">
+      🛑 STOP_SIP: 1
+    </span><span class="verdict-chip"
+      style="background:#fef2f2;color:#dc2626;border:1px solid #dc262644">
+      ⚠️ WITHDRAW_PARTIAL: 1
+    </span><span class="verdict-chip"
+      style="background:#fee2e2;color:#991b1b;border:1px solid #991b1b44">
+      ❌ WITHDRAW_FULL: 1
+    </span><span class="verdict-chip"
+      style="background:#f5f3ff;color:#7c3aed;border:1px solid #7c3aed44">
+      🔄 SWITCH: 1
+    </span>
+    </div>
+  </div>
+
+  <!-- Fund Cards -->
+  <div class="section-title">Fund Analysis</div>
+  <div class="fund-grid">
+    
+  <div class="fund-card" style="border-left-color:#22c55e">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">Mirae Asset Large Cap Fund - Direct Growth</div>
+        <div class="fund-meta">Large Cap &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#16a34a">Stable Outperformer</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#f0fdf4;color:#22c55e;border:1px solid #22c55e55">
+        ✅ CONTINUE
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹180,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹245,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#16a34a">₹65,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#16a34a">+18.50%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#16a34a">▲ +1.70% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_92197"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_92197'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [8.2, 14.5, 13.8, 15.2, 14.1],
+            backgroundColor: ['#22c55e', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [6.5, 11.3, 11.7, 12.0, 11.5],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span><span class="rh">15yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+8.20%</span><span class="rv" style="color:#16a34a">+14.50%</span><span class="rv" style="color:#16a34a">+13.80%</span><span class="rv" style="color:#16a34a">+15.20%</span><span class="rv" style="color:#16a34a">+14.10%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span><span class="rv" style="color:#64748b">+11.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#16a34a">+1.70%</span><span class="rv" style="color:#16a34a">+3.20%</span><span class="rv" style="color:#16a34a">+2.10%</span><span class="rv" style="color:#16a34a">+3.20%</span><span class="rv" style="color:#16a34a">+2.60%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag green">✅ Beats benchmark across all 5 horizons</span><span class="flag green">✅ 15yr CAGR of 14.1%</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹5,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jan 23</td><td style='color:#1e293b;font-size:10px'>₹5,000</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Mar 25</td><td style='color:#1e293b;font-size:10px'>₹5,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP active. Beats benchmark across all 5 horizons including 15yr CAGR of 14.1%. Strong XIRR of 18.5%. Best Large Cap fund in portfolio — keep as core holding.</div>
+    
+  </div>
+  <div class="fund-card" style="border-left-color:#16a34a">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">HDFC Mid Cap Opportunities Fund - Direct Growth</div>
+        <div class="fund-meta">Mid Cap &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#16a34a">Stable Outperformer</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#dcfce7;color:#16a34a;border:1px solid #16a34a55">
+        📈 INCREASE_SIP
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹120,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹185,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#16a34a">₹65,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#16a34a">+22.30%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#16a34a">▲ +2.70% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_29183"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_29183'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [15.8, 24.4, 22.6, 19.8],
+            backgroundColor: ['#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [13.1, 22.4, 19.6, 17.5],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+15.80%</span><span class="rv" style="color:#16a34a">+24.40%</span><span class="rv" style="color:#16a34a">+22.60%</span><span class="rv" style="color:#16a34a">+19.80%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+13.10%</span><span class="rv" style="color:#64748b">+22.40%</span><span class="rv" style="color:#64748b">+19.60%</span><span class="rv" style="color:#64748b">+17.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#16a34a">+2.70%</span><span class="rv" style="color:#16a34a">+2.00%</span><span class="rv" style="color:#16a34a">+3.00%</span><span class="rv" style="color:#16a34a">+2.30%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag green">✅ Consistent alpha across 4 horizons</span><span class="flag green">✅ 10yr CAGR of 19.8%</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹3,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jun 24</td><td style='color:#1e293b;font-size:10px'>₹3,000</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Feb 25</td><td style='color:#1e293b;font-size:10px'>₹3,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP active. Consistent +2-3% alpha across 4 horizons with 10yr CAGR of 19.8%. Strong compounder in mid-cap space. Increase SIP from 3K to 5K to accelerate wealth building.</div>
+    
+  </div>
+  <div class="fund-card" style="border-left-color:#0ea5e9">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">Parag Parikh Flexi Cap Fund - Direct Growth</div>
+        <div class="fund-meta">Flexi Cap &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#16a34a">Stable Outperformer</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#f0f9ff;color:#0ea5e9;border:1px solid #0ea5e955">
+        ▶️ RESTART_SIP
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹90,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹128,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#16a34a">₹38,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#16a34a">+16.80%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#16a34a">▲ +1.60% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_74794"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_74794'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [6.7, 18.3, 17.1, 16.5],
+            backgroundColor: ['#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [5.1, 11.3, 11.7, 12.0],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+6.70%</span><span class="rv" style="color:#16a34a">+18.30%</span><span class="rv" style="color:#16a34a">+17.10%</span><span class="rv" style="color:#16a34a">+16.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+5.10%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#16a34a">+1.60%</span><span class="rv" style="color:#16a34a">+7.00%</span><span class="rv" style="color:#16a34a">+5.40%</span><span class="rv" style="color:#16a34a">+4.50%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag green">✅ 10yr alpha of +4.5%</span><span class="flag green">✅ Built-in international diversification</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹3,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jan 23</td><td style='color:#1e293b;font-size:10px'>₹3,000</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Mar 24</td><td style='color:#1e293b;font-size:10px'>₹3,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP INACTIVE since Mar 2024. Fund has 10yr alpha of +4.5% with built-in US diversification. Stopping SIP on a top performer means missed compounding. Restart immediately at 3K/month.</div>
+    
+  </div>
+  <div class="fund-card" style="border-left-color:#f59e0b">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">Axis Bluechip Fund - Direct Growth</div>
+        <div class="fund-meta">Large Cap &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#f59e0b">Recent Underperformer</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#fffbeb;color:#f59e0b;border:1px solid #f59e0b55">
+        📉 DECREASE_SIP
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹100,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹105,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#16a34a">₹5,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#16a34a">+3.20%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#dc2626">▼ -9.00% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_94115"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_94115'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [-2.5, 8.1, 10.2, 12.8],
+            backgroundColor: ['#f87171', '#f87171', '#f87171', '#22c55e'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [6.5, 11.3, 11.7, 12.0],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-2.50%</span><span class="rv" style="color:#16a34a">+8.10%</span><span class="rv" style="color:#16a34a">+10.20%</span><span class="rv" style="color:#16a34a">+12.80%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-9.00%</span><span class="rv" style="color:#dc2626">-3.20%</span><span class="rv" style="color:#dc2626">-1.50%</span><span class="rv" style="color:#16a34a">+0.80%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag red">🚩 1yr alpha of -9.0%</span><span class="flag red">🚩 Deteriorating trend across recent horizons</span><span class="flag green">✅ 10yr alpha still positive at +0.8%</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹4,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jan 24</td><td style='color:#1e293b;font-size:10px'>₹4,000</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Apr 25</td><td style='color:#1e293b;font-size:10px'>₹4,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP active at 4K. 1yr alpha of -9.0% is alarming. 3yr and 5yr alpha also negative. Portfolio has 3 Large Cap funds — over-diversified. Reduce SIP to 1K while monitoring if trend reverses. Consider consolidating into Mirae if weakness persists.</div>
+    
+  </div>
+  <div class="fund-card" style="border-left-color:#7c3aed">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">ICICI Prudential Bluechip Fund - Direct Growth</div>
+        <div class="fund-meta">Large Cap &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#dc2626">Consistent Laggard</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#f5f3ff;color:#7c3aed;border:1px solid #7c3aed55">
+        🔄 SWITCH
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹75,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹73,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#dc2626">₹-2,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#dc2626">-1.80%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#dc2626">▼ -7.70% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_6323"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_6323'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [-1.2, 9.5, 10.8, 11.2],
+            backgroundColor: ['#f87171', '#f87171', '#f87171', '#f87171'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [6.5, 11.3, 11.7, 12.0],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-1.20%</span><span class="rv" style="color:#16a34a">+9.50%</span><span class="rv" style="color:#16a34a">+10.80%</span><span class="rv" style="color:#16a34a">+11.20%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-7.70%</span><span class="rv" style="color:#dc2626">-1.80%</span><span class="rv" style="color:#dc2626">-0.90%</span><span class="rv" style="color:#dc2626">-0.80%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag red">🚩 Negative alpha across all 4 horizons</span><span class="flag red">🚩 Portfolio has 3 Large Cap funds — over-diversified</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹2,500/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Aug 24</td><td style='color:#1e293b;font-size:10px'>₹2,500</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Mar 25</td><td style='color:#1e293b;font-size:10px'>₹2,500</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP active. Negative alpha across all 4 horizons (-7.7% 1yr, -0.8% 10yr). Portfolio has 3 Large Cap funds — over-diversified. Consolidate into Mirae Asset Large Cap which beats benchmark across all 5 horizons. Simplifies portfolio and improves returns.</div>
+    <div class="switch-to">📦 Consolidate into: Mirae Asset Large Cap Fund - Direct Growth</div>
+  </div>
+  <div class="fund-card" style="border-left-color:#ef4444">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">DSP Natural Resources Fund - Direct Growth</div>
+        <div class="fund-meta">Sectoral &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#dc2626">Consistent Laggard</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#fef2f2;color:#ef4444;border:1px solid #ef444455">
+        🛑 STOP_SIP
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹50,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹42,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#dc2626">₹-8,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#dc2626">-5.20%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#dc2626">▼ -15.00% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_19112"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_19112'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [-8.5, 5.2, 7.1, 8.5, 6.2],
+            backgroundColor: ['#f87171', '#f87171', '#f87171', '#f87171', '#f87171'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [6.5, 11.3, 11.7, 12.0, 11.5],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span><span class="rh">15yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-8.50%</span><span class="rv" style="color:#16a34a">+5.20%</span><span class="rv" style="color:#16a34a">+7.10%</span><span class="rv" style="color:#16a34a">+8.50%</span><span class="rv" style="color:#16a34a">+6.20%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span><span class="rv" style="color:#64748b">+11.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-15.00%</span><span class="rv" style="color:#dc2626">-6.10%</span><span class="rv" style="color:#dc2626">-4.60%</span><span class="rv" style="color:#dc2626">-3.50%</span><span class="rv" style="color:#dc2626">-5.30%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag red">🚩 Negative alpha across all 5 horizons</span><span class="flag red">🚩 Negative XIRR of -5.2%</span><span class="flag red">🚩 Sectoral concentration risk</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹2,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jun 23</td><td style='color:#1e293b;font-size:10px'>₹2,000</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jan 25</td><td style='color:#1e293b;font-size:10px'>₹2,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP active. Negative alpha across ALL 5 horizons including 15yr (-5.3%). XIRR of -5.2%. Commodity sector bet has failed structurally. Stop SIP immediately — hold existing units and review for full exit in 3 months.</div>
+    
+  </div>
+  <div class="fund-card" style="border-left-color:#dc2626">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">Nippon India Small Cap Fund - Direct Growth</div>
+        <div class="fund-meta">Small Cap &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#16a34a">Stable Outperformer</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#fef2f2;color:#dc2626;border:1px solid #dc262655">
+        ⚠️ WITHDRAW_PARTIAL
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹200,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹310,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#16a34a">₹110,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#16a34a">+25.10%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#16a34a">▲ +2.50% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_46473"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_46473'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [7.5, 20.2, 23.0, 21.5],
+            backgroundColor: ['#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [5.0, 15.2, 18.0, 16.0],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+7.50%</span><span class="rv" style="color:#16a34a">+20.20%</span><span class="rv" style="color:#16a34a">+23.00%</span><span class="rv" style="color:#16a34a">+21.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+5.00%</span><span class="rv" style="color:#64748b">+15.20%</span><span class="rv" style="color:#64748b">+18.00%</span><span class="rv" style="color:#64748b">+16.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#16a34a">+2.50%</span><span class="rv" style="color:#16a34a">+5.00%</span><span class="rv" style="color:#16a34a">+5.00%</span><span class="rv" style="color:#16a34a">+5.50%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag red">🚩 28% portfolio concentration in single small cap fund</span><span class="flag green">✅ 10yr alpha of +5.5%</span><span class="flag green">✅ XIRR of 25.1%</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹8,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jan 22</td><td style='color:#1e293b;font-size:10px'>₹8,000</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Apr 25</td><td style='color:#1e293b;font-size:10px'>₹8,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP active. Excellent 10yr alpha of +5.5% and XIRR of 25.1%. However, fund represents 28% of portfolio — dangerously concentrated in small cap. Withdraw 40% of units to bring weight under 15%. Redirect to mid-cap or flexi-cap for balance.</div>
+    
+  </div>
+  <div class="fund-card" style="border-left-color:#991b1b">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">Tata Digital India Fund - Direct Growth</div>
+        <div class="fund-meta">Sectoral &nbsp;·&nbsp; LUMPSUM</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#dc2626">Consistent Laggard</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#fee2e2;color:#991b1b;border:1px solid #991b1b55">
+        ❌ WITHDRAW_FULL
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹25,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹19,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#dc2626">₹-6,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#dc2626">-12.50%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#dc2626">▼ -24.70% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_25171"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_25171'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [-18.2, -2.5, 8.5],
+            backgroundColor: ['#f87171', '#f87171', '#f87171'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [6.5, 11.3, 11.7],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-18.20%</span><span class="rv" style="color:#dc2626">-2.50%</span><span class="rv" style="color:#16a34a">+8.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-24.70%</span><span class="rv" style="color:#dc2626">-13.80%</span><span class="rv" style="color:#dc2626">-3.20%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag red">🚩 1yr alpha of -24.7%</span><span class="flag red">🚩 XIRR of -12.5%</span><span class="flag red">🚩 Lumpsum at market peak</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹25,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jun 24</td><td style='color:#1e293b;font-size:10px'>₹25,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">No SIP (lumpsum). 1yr alpha of -24.7%, 3yr alpha of -13.8%. XIRR of -12.5%. IT sector structural downturn. Cut losses and redeploy into Parag Parikh Flexi Cap for diversified exposure including US tech at better valuations.</div>
+    <div class="switch-to">🔄 Switch to: Parag Parikh Flexi Cap Fund - Direct Growth</div>
+  </div>
+  <div class="fund-card" style="border-left-color:#f59e0b">
+    <div class="card-header">
+      <div>
+        <div class="fund-name">UTI Nifty 50 Index Fund - Direct Growth</div>
+        <div class="fund-meta">Index &nbsp;·&nbsp; SIP</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <span class="trend-badge" style="background:#16a34a">Stable Outperformer</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-weight:600">⚪ SIP NEVER</span>
+        </div>
+      </div>
+      <span class="verdict-badge"
+        style="background:#fffbeb;color:#f59e0b;border:1px solid #f59e0b55">
+        ⏸ PAUSE_SIP
+      </span>
+    </div>
+
+    <div class="financials">
+      <div class="fin-item">
+        <div class="fin-label">Invested</div>
+        <div class="fin-val">₹48,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">Current</div>
+        <div class="fin-val">₹52,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">P&L</div>
+        <div class="fin-val" style="color:#16a34a">₹4,000</div>
+      </div>
+      <div class="fin-item">
+        <div class="fin-label">XIRR</div>
+        <div class="fin-val" style="color:#16a34a">+7.80%</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;margin-bottom:8px"><span style="color:#dc2626">▼ -1.40% vs benchmark</span></div>
+
+    <!-- Returns chart -->
+    <div class="chart-wrap">
+      <canvas id="chart_78998"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('chart_78998'), {
+      type: 'bar',
+      data: {
+        labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
+        datasets: [
+          {
+            label: 'Fund',
+            data: [5.1, 11.3, 11.7, 12.0, 11.2],
+            backgroundColor: ['#f87171', '#22c55e', '#22c55e', '#22c55e', '#f87171'],
+            borderRadius: 4,
+          },
+          {
+            label: 'Benchmark',
+            data: [6.5, 11.3, 11.7, 12.0, 11.5],
+            backgroundColor: 'rgba(148,163,184,0.5)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: {
+            ticks: { font: { size: 10 }, callback: v => v+'%' },
+            grid: { color: '#f1f5f9' }
+          }
+        }
+      }
+    });
+    </script>
+
+    <!-- Returns detail -->
+    <div style="margin-bottom:10px">
+      <div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span><span class="rh">15yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+5.10%</span><span class="rv" style="color:#16a34a">+11.30%</span><span class="rv" style="color:#16a34a">+11.70%</span><span class="rv" style="color:#16a34a">+12.00%</span><span class="rv" style="color:#16a34a">+11.20%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span><span class="rv" style="color:#64748b">+11.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-1.40%</span><span class="rv" style="color:#16a34a">+0.00%</span><span class="rv" style="color:#16a34a">+0.00%</span><span class="rv" style="color:#16a34a">+0.00%</span><span class="rv" style="color:#dc2626">-0.30%</span></div>
+    </div>
+
+    <div class="flags"><span class="flag green">✅ Low cost index fund</span><span class="flag green">✅ 15yr track record matches benchmark</span></div>
+
+    
+    <details style="margin-top:10px">
+      <summary style="font-size:11px;font-weight:600;color:#475569;cursor:pointer;
+                      list-style:none;display:flex;align-items:center;gap:4px">
+        ▸ Monthly Investments &nbsp;
+        <span style="color:#94a3b8;font-weight:400">(typical SIP ₹2,000/mo · last 12 months)</span>
+      </summary>
+      <div style="margin-top:8px;overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%">
+          <tbody><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Jan 24</td><td style='color:#1e293b;font-size:10px'>₹2,000</td></tr><tr><td style='padding:1px 8px 1px 0;color:#64748b;font-size:10px'>Apr 25</td><td style='color:#1e293b;font-size:10px'>₹2,000</td></tr></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="reasoning" style="margin-top:10px">SIP active at 2K. Fund is fine — tracking Nifty 50 accurately with 15yr data. But total SIP outflow is 29.5K vs budget of 25K. Pause this lowest-priority SIP temporarily to free up cash for higher-alpha active funds. Resume when budget allows.</div>
+    
+  </div>
+  </div>
+
+  <!-- Action Items -->
+  
+  <div class="action-items" style="margin-bottom:24px">
+    <h2>⚡ This Week's Action Items</h2>
+    
+    <div class="action-item">
+      <div class="action-num">1.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#991b1b">❌ WITHDRAW_FULL</div>
+        <div class="action-fund">Tata Digital India Fund - Direct Growth</div>
+        <div class="action-reason">No SIP (lumpsum). 1yr alpha of -24.7%, 3yr alpha of -13.8%. XIRR of -12.5%. IT sector structural downturn. Cut losses an...</div>
+        <div style="font-size:11px;color:#7c3aed;margin-top:2px">→ Switch to: Parag Parikh Flexi Cap Fund - Direct Growth</div>
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">2.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#dc2626">⚠️ WITHDRAW_PARTIAL</div>
+        <div class="action-fund">Nippon India Small Cap Fund - Direct Growth</div>
+        <div class="action-reason">SIP active. Excellent 10yr alpha of +5.5% and XIRR of 25.1%. However, fund represents 28% of portfolio — dangerously con...</div>
+        
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">3.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#7c3aed">🔄 SWITCH</div>
+        <div class="action-fund">ICICI Prudential Bluechip Fund - Direct Growth</div>
+        <div class="action-reason">SIP active. Negative alpha across all 4 horizons (-7.7% 1yr, -0.8% 10yr). Portfolio has 3 Large Cap funds — over-diversi...</div>
+        
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">4.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#ef4444">🛑 STOP_SIP</div>
+        <div class="action-fund">DSP Natural Resources Fund - Direct Growth</div>
+        <div class="action-reason">SIP active. Negative alpha across ALL 5 horizons including 15yr (-5.3%). XIRR of -5.2%. Commodity sector bet has failed ...</div>
+        
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">5.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#f59e0b">📉 DECREASE_SIP</div>
+        <div class="action-fund">Axis Bluechip Fund - Direct Growth</div>
+        <div class="action-reason">SIP active at 4K. 1yr alpha of -9.0% is alarming. 3yr and 5yr alpha also negative. Portfolio has 3 Large Cap funds — ove...</div>
+        
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">6.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#0ea5e9">▶️ RESTART_SIP</div>
+        <div class="action-fund">Parag Parikh Flexi Cap Fund - Direct Growth</div>
+        <div class="action-reason">SIP INACTIVE since Mar 2024. Fund has 10yr alpha of +4.5% with built-in US diversification. Stopping SIP on a top perfor...</div>
+        
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">7.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#16a34a">📈 INCREASE_SIP</div>
+        <div class="action-fund">HDFC Mid Cap Opportunities Fund - Direct Growth</div>
+        <div class="action-reason">SIP active. Consistent +2-3% alpha across 4 horizons with 10yr CAGR of 19.8%. Strong compounder in mid-cap space. Increa...</div>
+        
+      </div>
+    </div>
+    <div class="action-item">
+      <div class="action-num">8.</div>
+      <div class="action-content">
+        <div class="action-verdict" style="color:#f59e0b">⏸ PAUSE_SIP</div>
+        <div class="action-fund">UTI Nifty 50 Index Fund - Direct Growth</div>
+        <div class="action-reason">SIP active at 2K. Fund is fine — tracking Nifty 50 accurately with 15yr data. But total SIP outflow is 29.5K vs budget o...</div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Portfolio Advisor &nbsp;·&nbsp; Powered by local LLM (LM Studio) &nbsp;·&nbsp;
+    Data: mfapi.in + yfinance &nbsp;·&nbsp; 10 Apr 2026
+  </div>
+
+</div>
+</body>
+</html>
