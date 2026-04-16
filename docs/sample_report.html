@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Advisor Report — 10 Apr 2026</title>
+<title>Portfolio Advisor Report — 16 Apr 2026</title>
 <script>/**
  * Skipped minification because the original files appears to be already minified.
  * Original file: /npm/chart.js@4.4.0/dist/chart.umd.js
@@ -136,7 +136,7 @@
   <div class="header">
     <h1>Portfolio Advisor Report</h1>
     <div class="subtitle">
-      Generated 10 April 2026 &nbsp;·&nbsp;
+      Generated 16 April 2026 &nbsp;·&nbsp;
       Retirement corpus &nbsp;·&nbsp;
       20yr horizon &nbsp;·&nbsp;
       Risk: Aggressive &nbsp;·&nbsp;
@@ -161,7 +161,7 @@
     </div>
     <div class="metric">
       <div class="label">Portfolio XIRR</div>
-      <div class="value" style="color:#16a34a">+173.31%</div>
+      <div class="value" style="color:#16a34a">+171.93%</div>
       <div class="sub">annualised</div>
     </div>
     <div class="metric">
@@ -245,6 +245,597 @@
     </div>
   </div>
 
+  <!-- Year-on-Year XIRR -->
+  
+    <div style="margin:30px 0">
+      <div class="section-title">Year-on-Year Portfolio XIRR</div>
+      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">
+          Invested vs actual value at each year-end with cumulative XIRR shown above bars.
+          2026* = year-to-date.
+        </div>
+        
+    <div style="height:320px;margin-bottom:12px">
+      <canvas id="yoy_portfolio"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_portfolio'), {
+      type: 'bar',
+      data: {
+        labels: ['2020', '2021', '2022', '2023', '2024', '2025', '2026*'],
+        datasets: [
+          {
+            label: 'Invested',
+            data: [120000, 300000, 480000, 620000, 750000, 830000, 888000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [132000, 395000, 455000, 725000, 985000, 1050000, 1131000],
+            backgroundColor: ['"#22c55e"', '"#22c55e"', '"#ef4444"', '"#22c55e"', '"#22c55e"', '"#22c55e"', '"#22c55e"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': ₹' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const xirrVals = [8.2, 22.8, -4.2, 12.1, 18.5, 16.3, 15.8];
+          const meta = chart.getDatasetMeta(1);
+          meta.data.forEach((bar, i) => {
+            if (xirrVals[i] === null) return;
+            ctx.save();
+            const val = xirrVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(val + '%', bar.x, bar.y - 6);
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+
+        <details style="margin-top:16px">
+          <summary style="font-size:12px;font-weight:600;color:#475569;cursor:pointer;
+                          list-style:none;display:flex;align-items:center;gap:4px">
+            ▸ Per-Fund Year-on-Year XIRR
+          </summary>
+          <div style="margin-top:12px">
+            
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Mirae Asset Large Cap Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_3136"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_3136'), {
+      type: 'bar',
+      data: {
+        labels: ['2020', '2021', '2022', '2023', '2024', '2025', '2026*'],
+        datasets: [{
+          data: [12.5, 22.8, -4.2, 14.1, 18.5, 16.3, 18.5],
+          backgroundColor: ['#22c55e', '#22c55e', '#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">HDFC Mid Cap Opportunities Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_42298"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_42298'), {
+      type: 'bar',
+      data: {
+        labels: ['2021', '2022', '2023', '2024', '2025', '2026*'],
+        datasets: [{
+          data: [35.2, -8.5, 18.7, 28.3, 22.1, 22.3],
+          backgroundColor: ['#22c55e', '#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Parag Parikh Flexi Cap Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_84810"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_84810'), {
+      type: 'bar',
+      data: {
+        labels: ['2021', '2022', '2023', '2024', '2025', '2026*'],
+        datasets: [{
+          data: [18.5, -2.1, 15.8, 20.2, 17.5, 16.8],
+          backgroundColor: ['#22c55e', '#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Axis Bluechip Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_83837"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_83837'), {
+      type: 'bar',
+      data: {
+        labels: ['2022', '2023', '2024', '2025', '2026*'],
+        datasets: [{
+          data: [5.1, 8.2, 6.1, 4.5, 3.2],
+          backgroundColor: ['#22c55e', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">ICICI Prudential Bluechip Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_70146"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_70146'), {
+      type: 'bar',
+      data: {
+        labels: ['2024', '2025', '2026*'],
+        datasets: [{
+          data: [-3.5, -2.8, -1.8],
+          backgroundColor: ['#ef4444', '#ef4444', '#ef4444'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">DSP Natural Resources Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_4579"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_4579'), {
+      type: 'bar',
+      data: {
+        labels: ['2023', '2024', '2025', '2026*'],
+        datasets: [{
+          data: [3.5, -8.1, -6.5, -5.2],
+          backgroundColor: ['#22c55e', '#ef4444', '#ef4444', '#ef4444'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Nippon India Small Cap Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_42865"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_42865'), {
+      type: 'bar',
+      data: {
+        labels: ['2022', '2023', '2024', '2025', '2026*'],
+        datasets: [{
+          data: [-5.2, 15.8, 28.1, 24.5, 25.1],
+          backgroundColor: ['#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Tata Digital India Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_31970"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_31970'), {
+      type: 'bar',
+      data: {
+        labels: ['2024', '2025', '2026*'],
+        datasets: [{
+          data: [-10.5, -11.8, -12.5],
+          backgroundColor: ['#ef4444', '#ef4444', '#ef4444'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+    <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">UTI Nifty 50 Index Fund - Direct Growth</div>
+    <div style="height:160px;margin-bottom:12px">
+      <canvas id="yoy_fund_65872"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_fund_65872'), {
+      type: 'bar',
+      data: {
+        labels: ['2024', '2025', '2026*'],
+        datasets: [{
+          data: [8.5, 7.2, 7.8],
+          backgroundColor: ['#22c55e', '#22c55e', '#22c55e'],
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: item => item.raw + '%' } }
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            grid: { color: '#f1f5f9' }
+          },
+          x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+        }
+      },
+      plugins: [{
+        afterDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            } else {
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }
+            ctx.restore();
+          });
+        }
+      }]
+    });
+    </script>
+          </div>
+        </details>
+      </div>
+    </div>
+
   <!-- Fund Cards -->
   <div class="section-title">Fund Analysis</div>
   <div class="fund-grid">
@@ -288,10 +879,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_92197"></canvas>
+      <canvas id="chart_3136"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_92197'), {
+    new Chart(document.getElementById('chart_3136'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
@@ -345,7 +936,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP active. Beats benchmark across all 5 horizons including 15yr CAGR of 14.1%. Strong XIRR of 18.5%. Best Large Cap fund in portfolio — keep as core holding.</div>
+    <div class="reasoning" style="margin-top:10px">SIP active. Beats benchmark across all 5 horizons including 15yr. Strong XIRR of 18.5%.</div>
     
   </div>
   <div class="fund-card" style="border-left-color:#16a34a">
@@ -387,10 +978,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_29183"></canvas>
+      <canvas id="chart_42298"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_29183'), {
+    new Chart(document.getElementById('chart_42298'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -444,7 +1035,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP active. Consistent +2-3% alpha across 4 horizons with 10yr CAGR of 19.8%. Strong compounder in mid-cap space. Increase SIP from 3K to 5K to accelerate wealth building.</div>
+    <div class="reasoning" style="margin-top:10px">SIP active. Consistent alpha with 10yr CAGR of 19.8%. Increase SIP to 5K.</div>
     
   </div>
   <div class="fund-card" style="border-left-color:#0ea5e9">
@@ -486,10 +1077,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_74794"></canvas>
+      <canvas id="chart_84810"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_74794'), {
+    new Chart(document.getElementById('chart_84810'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -527,7 +1118,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+6.70%</span><span class="rv" style="color:#16a34a">+18.30%</span><span class="rv" style="color:#16a34a">+17.10%</span><span class="rv" style="color:#16a34a">+16.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+5.10%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#16a34a">+1.60%</span><span class="rv" style="color:#16a34a">+7.00%</span><span class="rv" style="color:#16a34a">+5.40%</span><span class="rv" style="color:#16a34a">+4.50%</span></div>
     </div>
 
-    <div class="flags"><span class="flag green">✅ 10yr alpha of +4.5%</span><span class="flag green">✅ Built-in international diversification</span></div>
+    <div class="flags"><span class="flag green">✅ 10yr alpha of +4.5%</span></div>
 
     
     <details style="margin-top:10px">
@@ -543,7 +1134,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP INACTIVE since Mar 2024. Fund has 10yr alpha of +4.5% with built-in US diversification. Stopping SIP on a top performer means missed compounding. Restart immediately at 3K/month.</div>
+    <div class="reasoning" style="margin-top:10px">SIP INACTIVE. 10yr alpha of +4.5%. Restart immediately.</div>
     
   </div>
   <div class="fund-card" style="border-left-color:#f59e0b">
@@ -585,10 +1176,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_94115"></canvas>
+      <canvas id="chart_83837"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_94115'), {
+    new Chart(document.getElementById('chart_83837'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -626,7 +1217,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-2.50%</span><span class="rv" style="color:#16a34a">+8.10%</span><span class="rv" style="color:#16a34a">+10.20%</span><span class="rv" style="color:#16a34a">+12.80%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-9.00%</span><span class="rv" style="color:#dc2626">-3.20%</span><span class="rv" style="color:#dc2626">-1.50%</span><span class="rv" style="color:#16a34a">+0.80%</span></div>
     </div>
 
-    <div class="flags"><span class="flag red">🚩 1yr alpha of -9.0%</span><span class="flag red">🚩 Deteriorating trend across recent horizons</span><span class="flag green">✅ 10yr alpha still positive at +0.8%</span></div>
+    <div class="flags"><span class="flag red">🚩 1yr alpha of -9.0%</span><span class="flag green">✅ 10yr alpha still positive</span></div>
 
     
     <details style="margin-top:10px">
@@ -642,7 +1233,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP active at 4K. 1yr alpha of -9.0% is alarming. 3yr and 5yr alpha also negative. Portfolio has 3 Large Cap funds — over-diversified. Reduce SIP to 1K while monitoring if trend reverses. Consider consolidating into Mirae if weakness persists.</div>
+    <div class="reasoning" style="margin-top:10px">SIP active at 4K. 1yr alpha -9.0%. 3 Large Cap funds over-diversified. Reduce to 1K.</div>
     
   </div>
   <div class="fund-card" style="border-left-color:#7c3aed">
@@ -684,10 +1275,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_6323"></canvas>
+      <canvas id="chart_70146"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_6323'), {
+    new Chart(document.getElementById('chart_70146'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -725,7 +1316,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-1.20%</span><span class="rv" style="color:#16a34a">+9.50%</span><span class="rv" style="color:#16a34a">+10.80%</span><span class="rv" style="color:#16a34a">+11.20%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-7.70%</span><span class="rv" style="color:#dc2626">-1.80%</span><span class="rv" style="color:#dc2626">-0.90%</span><span class="rv" style="color:#dc2626">-0.80%</span></div>
     </div>
 
-    <div class="flags"><span class="flag red">🚩 Negative alpha across all 4 horizons</span><span class="flag red">🚩 Portfolio has 3 Large Cap funds — over-diversified</span></div>
+    <div class="flags"><span class="flag red">🚩 Negative alpha all horizons</span><span class="flag red">🚩 3 Large Cap funds — over-diversified</span></div>
 
     
     <details style="margin-top:10px">
@@ -741,7 +1332,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP active. Negative alpha across all 4 horizons (-7.7% 1yr, -0.8% 10yr). Portfolio has 3 Large Cap funds — over-diversified. Consolidate into Mirae Asset Large Cap which beats benchmark across all 5 horizons. Simplifies portfolio and improves returns.</div>
+    <div class="reasoning" style="margin-top:10px">Negative alpha all horizons. 3 Large Cap funds. Consolidate into Mirae.</div>
     <div class="switch-to">📦 Consolidate into: Mirae Asset Large Cap Fund - Direct Growth</div>
   </div>
   <div class="fund-card" style="border-left-color:#ef4444">
@@ -783,10 +1374,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_19112"></canvas>
+      <canvas id="chart_4579"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_19112'), {
+    new Chart(document.getElementById('chart_4579'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
@@ -824,7 +1415,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span><span class="rh">15yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-8.50%</span><span class="rv" style="color:#16a34a">+5.20%</span><span class="rv" style="color:#16a34a">+7.10%</span><span class="rv" style="color:#16a34a">+8.50%</span><span class="rv" style="color:#16a34a">+6.20%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span><span class="rv" style="color:#64748b">+11.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-15.00%</span><span class="rv" style="color:#dc2626">-6.10%</span><span class="rv" style="color:#dc2626">-4.60%</span><span class="rv" style="color:#dc2626">-3.50%</span><span class="rv" style="color:#dc2626">-5.30%</span></div>
     </div>
 
-    <div class="flags"><span class="flag red">🚩 Negative alpha across all 5 horizons</span><span class="flag red">🚩 Negative XIRR of -5.2%</span><span class="flag red">🚩 Sectoral concentration risk</span></div>
+    <div class="flags"><span class="flag red">🚩 Negative alpha all 5 horizons</span><span class="flag red">🚩 Negative XIRR</span></div>
 
     
     <details style="margin-top:10px">
@@ -840,7 +1431,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP active. Negative alpha across ALL 5 horizons including 15yr (-5.3%). XIRR of -5.2%. Commodity sector bet has failed structurally. Stop SIP immediately — hold existing units and review for full exit in 3 months.</div>
+    <div class="reasoning" style="margin-top:10px">Negative alpha all 5 horizons. XIRR -5.2%. Stop SIP immediately.</div>
     
   </div>
   <div class="fund-card" style="border-left-color:#dc2626">
@@ -882,10 +1473,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_46473"></canvas>
+      <canvas id="chart_42865"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_46473'), {
+    new Chart(document.getElementById('chart_42865'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -923,7 +1514,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+7.50%</span><span class="rv" style="color:#16a34a">+20.20%</span><span class="rv" style="color:#16a34a">+23.00%</span><span class="rv" style="color:#16a34a">+21.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+5.00%</span><span class="rv" style="color:#64748b">+15.20%</span><span class="rv" style="color:#64748b">+18.00%</span><span class="rv" style="color:#64748b">+16.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#16a34a">+2.50%</span><span class="rv" style="color:#16a34a">+5.00%</span><span class="rv" style="color:#16a34a">+5.00%</span><span class="rv" style="color:#16a34a">+5.50%</span></div>
     </div>
 
-    <div class="flags"><span class="flag red">🚩 28% portfolio concentration in single small cap fund</span><span class="flag green">✅ 10yr alpha of +5.5%</span><span class="flag green">✅ XIRR of 25.1%</span></div>
+    <div class="flags"><span class="flag red">🚩 28% portfolio concentration</span><span class="flag green">✅ 10yr alpha +5.5%</span><span class="flag green">✅ XIRR 25.1%</span></div>
 
     
     <details style="margin-top:10px">
@@ -939,7 +1530,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP active. Excellent 10yr alpha of +5.5% and XIRR of 25.1%. However, fund represents 28% of portfolio — dangerously concentrated in small cap. Withdraw 40% of units to bring weight under 15%. Redirect to mid-cap or flexi-cap for balance.</div>
+    <div class="reasoning" style="margin-top:10px">XIRR 25.1% but 28% of portfolio. Withdraw 40% to rebalance.</div>
     
   </div>
   <div class="fund-card" style="border-left-color:#991b1b">
@@ -981,10 +1572,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_25171"></canvas>
+      <canvas id="chart_31970"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_25171'), {
+    new Chart(document.getElementById('chart_31970'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr'],
@@ -1022,7 +1613,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-18.20%</span><span class="rv" style="color:#dc2626">-2.50%</span><span class="rv" style="color:#16a34a">+8.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(3, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-24.70%</span><span class="rv" style="color:#dc2626">-13.80%</span><span class="rv" style="color:#dc2626">-3.20%</span></div>
     </div>
 
-    <div class="flags"><span class="flag red">🚩 1yr alpha of -24.7%</span><span class="flag red">🚩 XIRR of -12.5%</span><span class="flag red">🚩 Lumpsum at market peak</span></div>
+    <div class="flags"><span class="flag red">🚩 1yr alpha -24.7%</span><span class="flag red">🚩 XIRR -12.5%</span></div>
 
     
     <details style="margin-top:10px">
@@ -1038,8 +1629,8 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">No SIP (lumpsum). 1yr alpha of -24.7%, 3yr alpha of -13.8%. XIRR of -12.5%. IT sector structural downturn. Cut losses and redeploy into Parag Parikh Flexi Cap for diversified exposure including US tech at better valuations.</div>
-    <div class="switch-to">🔄 Switch to: Parag Parikh Flexi Cap Fund - Direct Growth</div>
+    <div class="reasoning" style="margin-top:10px">1yr alpha -24.7%. XIRR -12.5%. Exit and redeploy.</div>
+    <div class="switch-to">🔄 Switch to: Parag Parikh Flexi Cap Fund</div>
   </div>
   <div class="fund-card" style="border-left-color:#f59e0b">
     <div class="card-header">
@@ -1080,10 +1671,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_78998"></canvas>
+      <canvas id="chart_65872"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_78998'), {
+    new Chart(document.getElementById('chart_65872'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
@@ -1121,7 +1712,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span><span class="rh">15yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#16a34a">+5.10%</span><span class="rv" style="color:#16a34a">+11.30%</span><span class="rv" style="color:#16a34a">+11.70%</span><span class="rv" style="color:#16a34a">+12.00%</span><span class="rv" style="color:#16a34a">+11.20%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span><span class="rv" style="color:#64748b">+11.50%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(5, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-1.40%</span><span class="rv" style="color:#16a34a">+0.00%</span><span class="rv" style="color:#16a34a">+0.00%</span><span class="rv" style="color:#16a34a">+0.00%</span><span class="rv" style="color:#dc2626">-0.30%</span></div>
     </div>
 
-    <div class="flags"><span class="flag green">✅ Low cost index fund</span><span class="flag green">✅ 15yr track record matches benchmark</span></div>
+    <div class="flags"><span class="flag green">✅ Low cost index fund</span><span class="flag green">✅ 15yr track record</span></div>
 
     
     <details style="margin-top:10px">
@@ -1137,7 +1728,7 @@
       </div>
     </details>
 
-    <div class="reasoning" style="margin-top:10px">SIP active at 2K. Fund is fine — tracking Nifty 50 accurately with 15yr data. But total SIP outflow is 29.5K vs budget of 25K. Pause this lowest-priority SIP temporarily to free up cash for higher-alpha active funds. Resume when budget allows.</div>
+    <div class="reasoning" style="margin-top:10px">Fund is fine. Pause to free cash for higher-alpha funds.</div>
     
   </div>
   </div>
@@ -1152,8 +1743,8 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#991b1b">❌ WITHDRAW_FULL</div>
         <div class="action-fund">Tata Digital India Fund - Direct Growth</div>
-        <div class="action-reason">No SIP (lumpsum). 1yr alpha of -24.7%, 3yr alpha of -13.8%. XIRR of -12.5%. IT sector structural downturn. Cut losses an...</div>
-        <div style="font-size:11px;color:#7c3aed;margin-top:2px">→ Switch to: Parag Parikh Flexi Cap Fund - Direct Growth</div>
+        <div class="action-reason">1yr alpha -24.7%. XIRR -12.5%. Exit and redeploy.</div>
+        <div style="font-size:11px;color:#7c3aed;margin-top:2px">→ Switch to: Parag Parikh Flexi Cap Fund</div>
       </div>
     </div>
     <div class="action-item">
@@ -1161,7 +1752,7 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#dc2626">⚠️ WITHDRAW_PARTIAL</div>
         <div class="action-fund">Nippon India Small Cap Fund - Direct Growth</div>
-        <div class="action-reason">SIP active. Excellent 10yr alpha of +5.5% and XIRR of 25.1%. However, fund represents 28% of portfolio — dangerously con...</div>
+        <div class="action-reason">XIRR 25.1% but 28% of portfolio. Withdraw 40% to rebalance.</div>
         
       </div>
     </div>
@@ -1170,7 +1761,7 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#7c3aed">🔄 SWITCH</div>
         <div class="action-fund">ICICI Prudential Bluechip Fund - Direct Growth</div>
-        <div class="action-reason">SIP active. Negative alpha across all 4 horizons (-7.7% 1yr, -0.8% 10yr). Portfolio has 3 Large Cap funds — over-diversi...</div>
+        <div class="action-reason">Negative alpha all horizons. 3 Large Cap funds. Consolidate into Mirae.</div>
         
       </div>
     </div>
@@ -1179,7 +1770,7 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#ef4444">🛑 STOP_SIP</div>
         <div class="action-fund">DSP Natural Resources Fund - Direct Growth</div>
-        <div class="action-reason">SIP active. Negative alpha across ALL 5 horizons including 15yr (-5.3%). XIRR of -5.2%. Commodity sector bet has failed ...</div>
+        <div class="action-reason">Negative alpha all 5 horizons. XIRR -5.2%. Stop SIP immediately.</div>
         
       </div>
     </div>
@@ -1188,7 +1779,7 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#f59e0b">📉 DECREASE_SIP</div>
         <div class="action-fund">Axis Bluechip Fund - Direct Growth</div>
-        <div class="action-reason">SIP active at 4K. 1yr alpha of -9.0% is alarming. 3yr and 5yr alpha also negative. Portfolio has 3 Large Cap funds — ove...</div>
+        <div class="action-reason">SIP active at 4K. 1yr alpha -9.0%. 3 Large Cap funds over-diversified. Reduce to 1K.</div>
         
       </div>
     </div>
@@ -1197,7 +1788,7 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#0ea5e9">▶️ RESTART_SIP</div>
         <div class="action-fund">Parag Parikh Flexi Cap Fund - Direct Growth</div>
-        <div class="action-reason">SIP INACTIVE since Mar 2024. Fund has 10yr alpha of +4.5% with built-in US diversification. Stopping SIP on a top perfor...</div>
+        <div class="action-reason">SIP INACTIVE. 10yr alpha of +4.5%. Restart immediately.</div>
         
       </div>
     </div>
@@ -1206,7 +1797,7 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#16a34a">📈 INCREASE_SIP</div>
         <div class="action-fund">HDFC Mid Cap Opportunities Fund - Direct Growth</div>
-        <div class="action-reason">SIP active. Consistent +2-3% alpha across 4 horizons with 10yr CAGR of 19.8%. Strong compounder in mid-cap space. Increa...</div>
+        <div class="action-reason">SIP active. Consistent alpha with 10yr CAGR of 19.8%. Increase SIP to 5K.</div>
         
       </div>
     </div>
@@ -1215,7 +1806,7 @@
       <div class="action-content">
         <div class="action-verdict" style="color:#f59e0b">⏸ PAUSE_SIP</div>
         <div class="action-fund">UTI Nifty 50 Index Fund - Direct Growth</div>
-        <div class="action-reason">SIP active at 2K. Fund is fine — tracking Nifty 50 accurately with 15yr data. But total SIP outflow is 29.5K vs budget o...</div>
+        <div class="action-reason">Fund is fine. Pause to free cash for higher-alpha funds.</div>
         
       </div>
     </div>
@@ -1223,7 +1814,7 @@
 
   <div class="footer">
     Portfolio Advisor &nbsp;·&nbsp; Powered by local LLM (LM Studio) &nbsp;·&nbsp;
-    Data: mfapi.in + yfinance &nbsp;·&nbsp; 10 Apr 2026
+    Data: mfapi.in + yfinance &nbsp;·&nbsp; 16 Apr 2026
   </div>
 
 </div>

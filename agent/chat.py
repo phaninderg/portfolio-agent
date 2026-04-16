@@ -5,6 +5,8 @@ User can ask follow-up questions; type 'exit' to quit.
 """
 
 from __future__ import annotations
+import select
+import sys
 from openai import OpenAI
 
 from config import LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, LLM_TEMPERATURE
@@ -95,22 +97,35 @@ def start_chat(
 
     print("\n" + "=" * 70)
     print("  💬  PORTFOLIO CHAT  —  Ask anything about your portfolio")
-    print("  Type 'exit' to quit")
+    print("  Type 'exit' to quit. Paste multi-line messages freely.")
     print("=" * 70 + "\n")
 
     while True:
         try:
-            user_input = input("You: ").strip()
+            first_line = input("You: ")
         except (EOFError, KeyboardInterrupt):
             print("\n[chat] Session ended.")
             break
 
-        if not user_input:
-            continue
-
-        if user_input.lower() in ("exit", "quit", "q", "bye"):
+        if first_line.strip().lower() in ("exit", "quit", "q", "bye"):
             print("\n[chat] Goodbye! Re-run python main.py for a fresh analysis.")
             break
+
+        # Collect all buffered lines (from a paste) using select to detect
+        # if more input is immediately available on stdin.
+        lines = [first_line]
+        try:
+            while select.select([sys.stdin], [], [], 0.05)[0]:
+                line = sys.stdin.readline()
+                if not line:  # EOF
+                    break
+                lines.append(line.rstrip("\n"))
+        except (OSError, ValueError):
+            pass
+
+        user_input = "\n".join(lines).strip()
+        if not user_input:
+            continue
 
         messages.append({"role": "user", "content": user_input})
 

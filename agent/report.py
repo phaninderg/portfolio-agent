@@ -527,17 +527,118 @@ def _yoy_bar_chart(chart_id: str, yoy_data: dict[int, float | None], height: int
     </script>"""
 
 
+def _yoy_portfolio_chart(portfolio_yoy: dict[int, dict]) -> str:
+    """Render portfolio YoY chart with invested vs actual bars + XIRR labels."""
+    current_year = date.today().year
+    sorted_years = sorted(portfolio_yoy.keys())
+    if not sorted_years:
+        return '<div style="color:#94a3b8;font-size:12px;padding:16px">No year-on-year data available.</div>'
+
+    labels = []
+    invested_data = []
+    actual_data = []
+    xirr_values = []
+    for y in sorted_years:
+        d = portfolio_yoy[y]
+        labels.append(f"{y}*" if y == current_year else str(y))
+        invested_data.append(round(d.get("invested", 0)))
+        actual_data.append(round(d.get("actual", 0)))
+        xirr_values.append(d.get("xirr"))
+
+    def _fmt_lakh(v: int) -> str:
+        if v >= 100000:
+            return f"{v / 100000:.1f}L"
+        if v >= 1000:
+            return f"{v / 1000:.0f}K"
+        return str(v)
+
+    return f"""
+    <div style="height:320px;margin-bottom:12px">
+      <canvas id="yoy_portfolio"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('yoy_portfolio'), {{
+      type: 'bar',
+      data: {{
+        labels: {labels},
+        datasets: [
+          {{
+            label: 'Invested',
+            data: {invested_data},
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }},
+          {{
+            label: 'Actual Value',
+            data: {actual_data},
+            backgroundColor: {['"#22c55e"' if (xirr_values[i] or 0) >= 0 else '"#ef4444"' for i in range(len(sorted_years))]},
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }}
+        ]
+      }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        plugins: {{
+          legend: {{ labels: {{ font: {{ size: 11 }}, boxWidth: 12 }} }},
+          tooltip: {{
+            callbacks: {{
+              label: function(item) {{
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': ₹' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }}
+            }}
+          }}
+        }},
+        scales: {{
+          y: {{
+            ticks: {{
+              font: {{ size: 10 }},
+              callback: function(v) {{
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }}
+            }},
+            grid: {{ color: '#f1f5f9' }}
+          }},
+          x: {{ ticks: {{ font: {{ size: 11 }} }}, grid: {{ display: false }} }}
+        }}
+      }},
+      plugins: [{{
+        afterDraw(chart) {{
+          const ctx = chart.ctx;
+          const xirrVals = {[v if v is not None else 'null' for v in xirr_values]};
+          const meta = chart.getDatasetMeta(1);
+          meta.data.forEach((bar, i) => {{
+            if (xirrVals[i] === null) return;
+            ctx.save();
+            const val = xirrVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(val + '%', bar.x, bar.y - 6);
+            ctx.restore();
+          }});
+        }}
+      }}]
+    }});
+    </script>"""
+
+
 def _yoy_section_html(holdings: list[dict], yoy_data: dict | None) -> str:
     """Build the Year-on-Year XIRR section with portfolio chart and fund drill-down."""
     if not yoy_data:
         return ""
 
     portfolio_yoy = yoy_data.get("portfolio", {})
-    if not any(v is not None for v in portfolio_yoy.values()):
+    if not portfolio_yoy:
         return ""
 
-    # Portfolio-level chart
-    portfolio_chart = _yoy_bar_chart("yoy_portfolio", portfolio_yoy, height=280)
+    # Portfolio-level chart (invested vs actual + XIRR labels)
+    portfolio_chart = _yoy_portfolio_chart(portfolio_yoy)
 
     # Per-fund drill-down charts
     fund_charts = ""
@@ -555,7 +656,7 @@ def _yoy_section_html(holdings: list[dict], yoy_data: dict | None) -> str:
       <div class="section-title">Year-on-Year Portfolio XIRR</div>
       <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
         <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">
-          Cumulative XIRR at each year-end (all cash flows from inception valued at Dec 31 NAV).
+          Invested vs actual value at each year-end with cumulative XIRR shown above bars.
           {current_year}* = year-to-date.
         </div>
         {portfolio_chart}
