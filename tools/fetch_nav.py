@@ -43,50 +43,107 @@ def _save_scheme_cache(cache: dict[str, str]) -> None:
 
 # ── search helpers ────────────────────────────────────────────────────────────
 
-def search_scheme_code(fund_name: str, top_n: int = 5) -> list[dict]:
+def search_scheme_code(fund_name: str, top_n: int = 10) -> list[dict]:
     """Search mfapi.in for a fund by name. Returns list of {schemeCode, schemeName}."""
-    # Simplify name: strip AMC prefixes and common noise for better matching
-    query = fund_name.strip()
-    for prefix in ("Mirae Asset", "ICICI Prudential", "HDFC", "SBI", "Axis",
-                   "Kotak", "Nippon India", "DSP", "Franklin", "Invesco",
-                   "Parag Parikh", "Quant", "UTI", "Aditya Birla Sun Life"):
-        query = query.replace(prefix, "").strip()
+    results: list[dict] = []
 
+    # Try full name first (better matches when AMC name is included)
     try:
-        resp = requests.get(MFAPI_SEARCH, params={"q": query}, timeout=10)
+        resp = requests.get(MFAPI_SEARCH, params={"q": fund_name.strip()}, timeout=10)
         resp.raise_for_status()
         results = resp.json()
-        return results[:top_n]
-    except Exception as exc:
-        print(f"  [fetch_nav] Search failed for '{fund_name}': {exc}")
-        return []
+    except Exception:
+        pass
+
+    # If too few results, retry with stripped AMC prefix
+    if len(results) < 3:
+        query = fund_name.strip()
+        for prefix in ("Mirae Asset", "ICICI Prudential", "HDFC", "SBI", "Axis",
+                       "Kotak", "Nippon India", "DSP", "Franklin", "Invesco",
+                       "Parag Parikh", "Quant", "UTI", "Aditya Birla Sun Life",
+                       "NIPPON INDIA", "TATA"):
+            query = query.replace(prefix, "").strip()
+        try:
+            resp = requests.get(MFAPI_SEARCH, params={"q": query}, timeout=10)
+            resp.raise_for_status()
+            extra = resp.json()
+            # Merge, avoiding duplicates
+            seen = {r["schemeCode"] for r in results}
+            for r in extra:
+                if r["schemeCode"] not in seen:
+                    results.append(r)
+                    seen.add(r["schemeCode"])
+        except Exception as exc:
+            print(f"  [fetch_nav] Search failed for '{fund_name}': {exc}")
+
+    return results[:top_n]
 
 
-def resolve_scheme_code(fund_name: str, cache: dict[str, str]) -> str | None:
+def _validate_scheme_nav(scheme_code: str, cas_nav: float) -> bool:
+    """Check if mfapi NAV roughly matches the CAS transaction NAV."""
+    try:
+        resp = requests.get(f"{MFAPI_BASE}/{scheme_code}", timeout=10)
+        resp.raise_for_status()
+        data = resp.json().get("data", [])
+        if not data:
+            return False
+        mfapi_nav = float(data[0]["nav"])
+        # Allow 20% tolerance (NAVs change daily, CAS date may differ)
+        ratio = mfapi_nav / cas_nav if cas_nav > 0 else 0
+        return 0.5 < ratio < 2.0
+    except Exception:
+        return False
+
+
+def resolve_scheme_code(
+    fund_name: str,
+    cache: dict[str, str],
+    cas_nav_hint: float | None = None,
+) -> str | None:
     """
     Look up scheme code for a fund name.
-    Uses cache first; falls back to mfapi.in search and picks top result.
+    Uses cache first; falls back to mfapi.in search.
+    When cas_nav_hint is provided, validates the scheme code by comparing
+    mfapi NAV against the CAS transaction NAV to catch wrong mappings.
     """
     if fund_name in cache:
-        return cache[fund_name]
+        code = cache[fund_name]
+        # Validate cached code if we have a NAV hint
+        if cas_nav_hint and not _validate_scheme_nav(code, cas_nav_hint):
+            print(f"  [fetch_nav] ⚠ Cached code {code} for '{fund_name[:45]}' has NAV mismatch — re-resolving")
+            del cache[fund_name]
+        else:
+            return code
 
     results = search_scheme_code(fund_name)
     if not results:
         return None
 
-    # Pick exact or best match
+    # Pick exact name match first
     fund_lower = fund_name.lower()
     for r in results:
         if r.get("schemeName", "").lower() == fund_lower:
             code = str(r["schemeCode"])
+            if cas_nav_hint and not _validate_scheme_nav(code, cas_nav_hint):
+                continue
             cache[fund_name] = code
             return code
 
-    # Fallback: first result
-    code = str(results[0]["schemeCode"])
-    cache[fund_name] = code
-    print(f"  [fetch_nav] '{fund_name}' → '{results[0]['schemeName']}' (best guess)")
-    return code
+    # Try each result, validate NAV if hint available
+    for r in results:
+        code = str(r["schemeCode"])
+        if cas_nav_hint:
+            if _validate_scheme_nav(code, cas_nav_hint):
+                cache[fund_name] = code
+                print(f"  [fetch_nav] '{fund_name[:45]}' → '{r['schemeName'][:45]}' (NAV validated)")
+                return code
+        else:
+            cache[fund_name] = code
+            print(f"  [fetch_nav] '{fund_name[:45]}' → '{r['schemeName'][:45]}' (best guess)")
+            return code
+
+    print(f"  [fetch_nav] ⚠ No valid scheme code found for '{fund_name[:50]}'")
+    return None
 
 
 # ── NAV + returns ─────────────────────────────────────────────────────────────
@@ -240,7 +297,16 @@ def enrich_holdings_with_returns(holdings: list[dict]) -> list[dict]:
         fund_name = h["fund_name"]
         print(f"\n[fetch_nav] [{i+1}/{len(holdings)}] {fund_name}")
 
-        code = resolve_scheme_code(fund_name, cache)
+        # Extract a NAV hint from the most recent CAS transaction for validation
+        cas_nav_hint = None
+        for txn in reversed(h.get("transactions", [])):
+            units = float(txn.get("units", 0))
+            amount = float(txn.get("amount", 0))
+            if units > 0 and amount > 0:
+                cas_nav_hint = amount / units
+                break
+
+        code = resolve_scheme_code(fund_name, cache, cas_nav_hint=cas_nav_hint)
         if not code:
             print(f"  ⚠ Could not resolve scheme code — skipping returns")
             h.update({
