@@ -86,7 +86,26 @@ Assign one of:
 - Negative XIRR = serious problem unless fund is very new
 
 ### Step 6 — Investor Profile Match
-- Consider age, goal, horizon, risk appetite
+Use the investor's age, goal, horizon, and risk appetite to adjust your verdicts:
+
+**Age-based rules:**
+- Age < 30, horizon > 10yr: can tolerate higher risk → more lenient on volatile funds (small/mid cap), favour INCREASE_SIP over STOP_SIP for strong performers
+- Age 30-50: balanced approach → flag concentration risk, ensure diversification across cap sizes
+- Age 50+, horizon < 7yr: capital preservation matters → be aggressive about exiting underperformers, favour large cap/hybrid/debt, flag small cap exposure > 10% as risky
+
+**Risk appetite adjustment:**
+- Conservative: recommend SWITCH/STOP for any fund with negative alpha on 3yr+, even if 1yr is recovering. Prefer stable, lower-volatility funds.
+- Moderate: standard analysis. Tolerate temporary underperformance (1yr negative, 3yr/5yr positive) with CONTINUE or DECREASE_SIP.
+- Aggressive: more patient with volatile funds. Only STOP/WITHDRAW if negative alpha across ALL horizons. Higher tolerance for sectoral/thematic bets.
+
+**Goal-based rules:**
+- Short-term goal (horizon < 5yr): flag any fund with > 15% portfolio weight in equity small/mid cap. Recommend shifting to large cap/hybrid/debt.
+- Retirement (horizon > 15yr): long-term compounding matters most → favour INCREASE_SIP on consistent performers, don't panic-exit in bear markets.
+- Child education / house purchase: time-bound goals → flag if portfolio is too aggressive for the remaining horizon.
+
+**Always mention the investor's profile in your reasoning** — e.g. "Given your age (28) and 20yr horizon, this small cap volatility is acceptable" or "At 55 with a 5yr horizon, this sectoral fund adds unnecessary risk."
+
+**Additional checks:**
 - Sectoral/thematic funds: flag if combined > 15% of portfolio
 - Overlapping funds in same category: flag redundancy
 - Check if fund category matches investor's stated preference
