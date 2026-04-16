@@ -87,20 +87,60 @@ def _cashflows_up_to_date(
     return cfs
 
 
+def _cashflows_in_year(transactions: list[dict], year: int) -> list[tuple[date, float]]:
+    """Build signed cashflow list from transactions within a single calendar year."""
+    start = date(year, 1, 1)
+    end = date(year, 12, 31)
+    cfs: list[tuple[date, float]] = []
+    for txn in transactions:
+        txn_date = _to_date(txn["date"])
+        if txn_date < start or txn_date > end:
+            continue
+        amount = float(txn.get("amount", 0))
+        if amount == 0:
+            continue
+        txn_type = str(txn.get("type") or "")
+        if is_purchase(txn_type):
+            cfs.append((txn_date, -abs(amount)))
+        elif is_redemption(txn_type):
+            cfs.append((txn_date, abs(amount)))
+    return cfs
+
+
+def _units_bought_in_year(transactions: list[dict], year: int) -> float:
+    """Sum of units purchased (minus redeemed) within a single calendar year."""
+    start = date(year, 1, 1)
+    end = date(year, 12, 31)
+    units = 0.0
+    for txn in transactions:
+        txn_date = _to_date(txn["date"])
+        if txn_date < start or txn_date > end:
+            continue
+        txn_type = str(txn.get("type") or "")
+        txn_units = float(txn.get("units", 0))
+        if is_purchase(txn_type):
+            units += abs(txn_units)
+        elif is_redemption(txn_type):
+            units -= abs(txn_units)
+    return units
+
+
 def compute_fund_yoy_xirr(
     holding: dict, nav_history: list[dict]
-) -> dict[int, float | None]:
+) -> dict[int, dict]:
     """
-    Compute cumulative XIRR at each year-end for a single fund.
+    Compute year-slice performance for a single fund.
 
-    Returns {year: xirr_percentage_or_None, ...}.
-    Current year uses holding['current_value'] as terminal value.
+    For each year, considers ONLY the SIP installments made in that year
+    and their value at Dec 31 of that year. This answers: "How did the
+    money I invested in 2023 perform by end of 2023?"
+
+    Returns {year: {"return_pct": float|None, "invested": float, "actual": float}}
     """
     transactions = holding.get("transactions", [])
     if not transactions:
         return {}
 
-    # Determine year range
     dates = []
     for txn in transactions:
         try:
@@ -110,46 +150,58 @@ def compute_fund_yoy_xirr(
     if not dates:
         return {}
 
-    first_date = min(dates)
-    first_year = first_date.year
+    first_year = min(dates).year
     current_year = date.today().year
-    result: dict[int, float | None] = {}
+    result: dict[int, dict] = {}
 
     for year in range(first_year, current_year + 1):
-        if year == current_year:
-            terminal_value = holding.get("current_value") or 0
-            end_date = date.today()
-        else:
-            end_date = date(year, 12, 31)
-            units = _units_held_on_date(transactions, end_date)
-            if units <= 0:
-                result[year] = None
-                continue
-            nav = _find_nav_on_date(nav_history, end_date)
-            if nav is None:
-                result[year] = None
-                continue
-            terminal_value = units * nav
-
-        cashflows = _cashflows_up_to_date(transactions, end_date)
-        if not cashflows:
-            result[year] = None
+        # Only consider investments made in THIS year
+        year_cashflows = _cashflows_in_year(transactions, year)
+        if not year_cashflows:
             continue
 
-        days_held = (end_date - first_date).days
-        if days_held < 365:
-            # Partial year: use simple absolute return instead of XIRR
-            # XIRR annualises short periods into absurd numbers
-            total_invested = sum(abs(amt) for _, amt in cashflows if amt < 0)
-            if total_invested > 0:
-                result[year] = round((terminal_value - total_invested) / total_invested * 100, 2)
-            else:
-                result[year] = None
+        year_invested = sum(abs(amt) for _, amt in year_cashflows if amt < 0)
+        if year_invested <= 0:
+            continue
+
+        units_in_year = _units_bought_in_year(transactions, year)
+        if units_in_year <= 0:
+            continue
+
+        if year == current_year:
+            # Current partial year: use current NAV
+            current_nav = holding.get("current_nav")
+            if not current_nav:
+                # Try from nav_history
+                if nav_history:
+                    try:
+                        current_nav = float(nav_history[0]["nav"])
+                    except (KeyError, ValueError, IndexError):
+                        continue
+            if not current_nav:
+                continue
+            year_end_value = units_in_year * current_nav
         else:
-            # Full year+: use proper XIRR (handles multiple cashflows correctly)
-            cashflows.append((end_date, terminal_value))
-            xirr_val = xirr(cashflows)
-            result[year] = round(xirr_val, 2) if xirr_val is not None else None
+            nav = _find_nav_on_date(nav_history, date(year, 12, 31))
+            if nav is None:
+                continue
+            year_end_value = units_in_year * nav
+
+        # XIRR considering SIP timing within the year
+        end = date(year, 12, 31) if year != current_year else date.today()
+        cf_with_terminal = year_cashflows + [(end, year_end_value)]
+        xirr_val = xirr(cf_with_terminal)
+        xirr_pct = round(xirr_val, 2) if xirr_val is not None else None
+
+        # Fallback to simple return if XIRR fails
+        if xirr_pct is None:
+            xirr_pct = round((year_end_value - year_invested) / year_invested * 100, 2)
+
+        result[year] = {
+            "return_pct": xirr_pct,
+            "invested": round(year_invested),
+            "actual": round(year_end_value),
+        }
 
     return result
 
@@ -222,9 +274,11 @@ def compute_portfolio_yoy_xirr(
             result[year] = {"xirr": None, "invested": round(total_invested), "actual": round(total_terminal)}
             continue
 
+        return_pct = round((total_terminal - total_invested) / total_invested * 100, 2) if total_invested > 0 else None
+
         days_held = (end_date - first_date).days
         if days_held < 365:
-            xirr_pct = round((total_terminal - total_invested) / total_invested * 100, 2) if total_invested > 0 else None
+            xirr_pct = return_pct
         else:
             all_cashflows.append((end_date, total_terminal))
             xirr_val = xirr(all_cashflows)
@@ -232,11 +286,39 @@ def compute_portfolio_yoy_xirr(
 
         result[year] = {
             "xirr": xirr_pct,
+            "return_pct": return_pct,
             "invested": round(total_invested),
             "actual": round(total_terminal),
         }
 
     return result
+
+
+def _check_nav_mismatch(holding: dict, nav_history: list[dict]) -> None:
+    """Warn if CAS transaction NAV diverges from mfapi NAV — indicates wrong scheme code."""
+    transactions = holding.get("transactions", [])
+    for txn in reversed(transactions):
+        txn_type = str(txn.get("type") or "")
+        if not is_purchase(txn_type):
+            continue
+        units = float(txn.get("units", 0))
+        amount = float(txn.get("amount", 0))
+        if units <= 0 or amount <= 0:
+            continue
+        cas_nav = amount / units
+        txn_date = _to_date(txn["date"])
+        mfapi_nav = _find_nav_on_date(nav_history, txn_date)
+        if mfapi_nav is None:
+            break
+        ratio = mfapi_nav / cas_nav if cas_nav > 0 else 0
+        if ratio > 1.5 or ratio < 0.67:
+            print(
+                f"\n  ⚠ SCHEME CODE MISMATCH for {holding['fund_name'][:45]}"
+                f"\n    CAS NAV={cas_nav:.2f} vs mfapi NAV={mfapi_nav:.2f} (ratio={ratio:.1f}x)"
+                f"\n    scheme_codes.json likely has a wrong mapping → per-fund numbers will be inaccurate"
+                f"\n    Fix: delete scheme_codes.json and re-run to re-resolve scheme codes\n"
+            )
+        break
 
 
 def enrich_holdings_with_yoy_xirr(
@@ -270,11 +352,15 @@ def enrich_holdings_with_yoy_xirr(
             h["yoy_xirr"] = {}
             continue
 
+        # Cross-validate: compare CAS transaction NAV with mfapi NAV
+        # If they diverge significantly, scheme_codes.json has a wrong mapping
+        _check_nav_mismatch(h, nav_hist)
+
         nav_histories[name] = nav_hist
         yoy = compute_fund_yoy_xirr(h, nav_hist)
         h["yoy_xirr"] = yoy
 
-        years_computed = [y for y, v in yoy.items() if v is not None]
+        years_computed = [y for y, d in yoy.items() if d.get("return_pct") is not None]
         if years_computed:
             print(f"✓ {min(years_computed)}-{max(years_computed)} ({len(years_computed)} years)")
         else:

@@ -451,21 +451,23 @@ def _returns_table(h: dict) -> str:
 
 # ── Year-on-Year XIRR Section ────────────────────────────────────────────────
 
-def _yoy_bar_chart(chart_id: str, yoy_data: dict[int, float | None], height: int = 280, title: str = "") -> str:
-    """Render a single YoY XIRR bar chart with embedded value labels."""
+def _yoy_invested_actual_chart(chart_id: str, yoy_data: dict[int, dict], height: int = 320, title: str = "") -> str:
+    """Render YoY chart with invested vs actual bars + return % labels."""
     current_year = date.today().year
-    sorted_years = sorted(y for y, v in yoy_data.items() if v is not None)
+    sorted_years = sorted(yoy_data.keys())
     if not sorted_years:
         return '<div style="color:#94a3b8;font-size:12px;padding:16px">No year-on-year data available.</div>'
 
     labels = []
-    values = []
-    colors = []
+    invested_data = []
+    actual_data = []
+    return_values = []
     for y in sorted_years:
-        v = yoy_data[y]
+        d = yoy_data[y]
         labels.append(f"{y}*" if y == current_year else str(y))
-        values.append(round(v, 1))
-        colors.append("#22c55e" if v >= 0 else "#ef4444")
+        invested_data.append(round(d.get("invested", 0)))
+        actual_data.append(round(d.get("actual", 0)))
+        return_values.append(d.get("return_pct"))
 
     title_html = f'<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">{title}</div>' if title else ""
 
@@ -476,88 +478,6 @@ def _yoy_bar_chart(chart_id: str, yoy_data: dict[int, float | None], height: int
     </div>
     <script>
     new Chart(document.getElementById('{chart_id}'), {{
-      type: 'bar',
-      data: {{
-        labels: {labels},
-        datasets: [{{
-          data: {values},
-          backgroundColor: {colors},
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }}]
-      }},
-      options: {{
-        responsive: true, maintainAspectRatio: false,
-        plugins: {{
-          legend: {{ display: false }},
-          tooltip: {{ callbacks: {{ label: item => item.raw + '%' }} }}
-        }},
-        scales: {{
-          y: {{
-            ticks: {{ font: {{ size: 11 }}, callback: v => v + '%' }},
-            grid: {{ color: '#f1f5f9' }}
-          }},
-          x: {{ ticks: {{ font: {{ size: 11 }} }}, grid: {{ display: false }} }}
-        }}
-      }},
-      plugins: [{{
-        afterDraw(chart) {{
-          const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
-          meta.data.forEach((bar, i) => {{
-            const val = chart.data.datasets[0].data[i];
-            ctx.save();
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 11px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {{
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            }} else {{
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }}
-            ctx.restore();
-          }});
-        }}
-      }}]
-    }});
-    </script>"""
-
-
-def _yoy_portfolio_chart(portfolio_yoy: dict[int, dict]) -> str:
-    """Render portfolio YoY chart with invested vs actual bars + XIRR labels."""
-    current_year = date.today().year
-    sorted_years = sorted(portfolio_yoy.keys())
-    if not sorted_years:
-        return '<div style="color:#94a3b8;font-size:12px;padding:16px">No year-on-year data available.</div>'
-
-    labels = []
-    invested_data = []
-    actual_data = []
-    xirr_values = []
-    for y in sorted_years:
-        d = portfolio_yoy[y]
-        labels.append(f"{y}*" if y == current_year else str(y))
-        invested_data.append(round(d.get("invested", 0)))
-        actual_data.append(round(d.get("actual", 0)))
-        xirr_values.append(d.get("xirr"))
-
-    def _fmt_lakh(v: int) -> str:
-        if v >= 100000:
-            return f"{v / 100000:.1f}L"
-        if v >= 1000:
-            return f"{v / 1000:.0f}K"
-        return str(v)
-
-    return f"""
-    <div style="height:320px;margin-bottom:12px">
-      <canvas id="yoy_portfolio"></canvas>
-    </div>
-    <script>
-    new Chart(document.getElementById('yoy_portfolio'), {{
       type: 'bar',
       data: {{
         labels: {labels},
@@ -573,7 +493,7 @@ def _yoy_portfolio_chart(portfolio_yoy: dict[int, dict]) -> str:
           {{
             label: 'Actual Value',
             data: {actual_data},
-            backgroundColor: {['"#22c55e"' if (xirr_values[i] or 0) >= 0 else '"#ef4444"' for i in range(len(sorted_years))]},
+            backgroundColor: {['"#22c55e"' if (return_values[i] or 0) >= 0 else '"#ef4444"' for i in range(len(sorted_years))]},
             borderRadius: 4,
             barPercentage: 0.8,
             categoryPercentage: 0.7,
@@ -589,7 +509,7 @@ def _yoy_portfolio_chart(portfolio_yoy: dict[int, dict]) -> str:
               label: function(item) {{
                 const v = item.raw;
                 const lbl = item.dataset.label;
-                return lbl + ': ₹' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+                return lbl + ': \\u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
               }}
             }}
           }}
@@ -610,16 +530,16 @@ def _yoy_portfolio_chart(portfolio_yoy: dict[int, dict]) -> str:
       plugins: [{{
         afterDraw(chart) {{
           const ctx = chart.ctx;
-          const xirrVals = {[v if v is not None else 'null' for v in xirr_values]};
+          const retVals = {[v if v is not None else 'null' for v in return_values]};
           const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {{
-            if (xirrVals[i] === null) return;
+            if (retVals[i] === null) return;
             ctx.save();
-            const val = xirrVals[i];
+            const val = retVals[i];
             ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(val + '%', bar.x, bar.y - 6);
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           }});
         }}
@@ -637,18 +557,17 @@ def _yoy_section_html(holdings: list[dict], yoy_data: dict | None) -> str:
     if not portfolio_yoy:
         return ""
 
-    # Portfolio-level chart (invested vs actual + XIRR labels)
-    portfolio_chart = _yoy_portfolio_chart(portfolio_yoy)
+    # Portfolio-level chart (invested vs actual + return % labels)
+    portfolio_chart = _yoy_invested_actual_chart("yoy_portfolio", portfolio_yoy, height=320)
 
-    # Per-fund drill-down charts
+    # Per-fund drill-down charts (same invested vs actual format)
     fund_charts = ""
     for h in holdings:
         fund_yoy = h.get("yoy_xirr", {})
-        valid_years = {y: v for y, v in fund_yoy.items() if v is not None}
-        if not valid_years:
+        if not fund_yoy:
             continue
         chart_id = f"yoy_fund_{abs(hash(h['fund_name'])) % 99999}"
-        fund_charts += _yoy_bar_chart(chart_id, valid_years, height=160, title=h["fund_name"])
+        fund_charts += _yoy_invested_actual_chart(chart_id, fund_yoy, height=200, title=h["fund_name"])
 
     current_year = date.today().year
     return f"""

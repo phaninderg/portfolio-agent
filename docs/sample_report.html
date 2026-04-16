@@ -255,6 +255,7 @@
           2026* = year-to-date.
         </div>
         
+    
     <div style="height:320px;margin-bottom:12px">
       <canvas id="yoy_portfolio"></canvas>
     </div>
@@ -266,7 +267,7 @@
         datasets: [
           {
             label: 'Invested',
-            data: [120000, 300000, 480000, 620000, 750000, 830000, 888000],
+            data: [120000, 300000, 540000, 720000, 870000, 960000, 1005000],
             backgroundColor: '#94a3b8',
             borderRadius: 4,
             barPercentage: 0.8,
@@ -274,7 +275,7 @@
           },
           {
             label: 'Actual Value',
-            data: [132000, 395000, 455000, 725000, 985000, 1050000, 1131000],
+            data: [127500, 368400, 512460, 853200, 981360, 1041600, 1057260],
             backgroundColor: ['"#22c55e"', '"#22c55e"', '"#ef4444"', '"#22c55e"', '"#22c55e"', '"#22c55e"', '"#22c55e"'],
             borderRadius: 4,
             barPercentage: 0.8,
@@ -291,7 +292,7 @@
               label: function(item) {
                 const v = item.raw;
                 const lbl = item.dataset.label;
-                return lbl + ': ₹' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
               }
             }
           }
@@ -312,16 +313,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const xirrVals = [8.2, 22.8, -4.2, 12.1, 18.5, 16.3, 15.8];
+          const retVals = [6.3, 22.8, -5.1, 18.5, 12.8, 8.5, 5.2];
           const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            if (xirrVals[i] === null) return;
+            if (retVals[i] === null) return;
             ctx.save();
-            const val = xirrVals[i];
+            const val = retVals[i];
             ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(val + '%', bar.x, bar.y - 6);
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -337,30 +338,55 @@
           <div style="margin-top:12px">
             
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Mirae Asset Large Cap Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_3136"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_93077"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_3136'), {
+    new Chart(document.getElementById('yoy_fund_93077'), {
       type: 'bar',
       data: {
         labels: ['2020', '2021', '2022', '2023', '2024', '2025', '2026*'],
-        datasets: [{
-          data: [12.5, 22.8, -4.2, 14.1, 18.5, 16.3, 18.5],
-          backgroundColor: ['#22c55e', '#22c55e', '#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [60000, 60000, 60000, 60000, 60000, 30000, 15000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [67500, 76980, 54900, 70920, 73260, 32850, 15765],
+            backgroundColor: ['"#22c55e"', '"#22c55e"', '"#ef4444"', '"#22c55e"', '"#22c55e"', '"#22c55e"', '"#22c55e"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -369,22 +395,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [12.5, 28.3, -8.5, 18.2, 22.1, 9.5, 5.1];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -392,30 +412,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">HDFC Mid Cap Opportunities Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_42298"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_45889"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_42298'), {
+    new Chart(document.getElementById('yoy_fund_45889'), {
       type: 'bar',
       data: {
         labels: ['2021', '2022', '2023', '2024', '2025', '2026*'],
-        datasets: [{
-          data: [35.2, -8.5, 18.7, 28.3, 22.1, 22.3],
-          backgroundColor: ['#22c55e', '#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [36000, 36000, 36000, 36000, 18000, 9000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [51300, 31392, 47556, 45288, 21330, 9738],
+            backgroundColor: ['"#22c55e"', '"#ef4444"', '"#22c55e"', '"#22c55e"', '"#22c55e"', '"#22c55e"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -424,22 +469,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [42.5, -12.8, 32.1, 25.8, 18.5, 8.2];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -447,30 +486,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Parag Parikh Flexi Cap Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_84810"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_89165"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_84810'), {
+    new Chart(document.getElementById('yoy_fund_89165'), {
       type: 'bar',
       data: {
         labels: ['2021', '2022', '2023', '2024', '2025', '2026*'],
-        datasets: [{
-          data: [18.5, -2.1, 15.8, 20.2, 17.5, 16.8],
-          backgroundColor: ['#22c55e', '#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [36000, 36000, 36000, 36000, 18000, 9000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [43956, 34740, 43488, 41472, 19584, 9378],
+            backgroundColor: ['"#22c55e"', '"#ef4444"', '"#22c55e"', '"#22c55e"', '"#22c55e"', '"#22c55e"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -479,22 +543,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [22.1, -3.5, 20.8, 15.2, 8.8, 4.2];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -502,30 +560,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Axis Bluechip Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_83837"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_48593"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_83837'), {
+    new Chart(document.getElementById('yoy_fund_48593'), {
       type: 'bar',
       data: {
         labels: ['2022', '2023', '2024', '2025', '2026*'],
-        datasets: [{
-          data: [5.1, 8.2, 6.1, 4.5, 3.2],
-          backgroundColor: ['#22c55e', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [48000, 48000, 48000, 24000, 12000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [49008, 52080, 47424, 22608, 11616],
+            backgroundColor: ['"#22c55e"', '"#22c55e"', '"#ef4444"', '"#ef4444"', '"#ef4444"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -534,22 +617,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [2.1, 8.5, -1.2, -5.8, -3.2];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -557,30 +634,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">ICICI Prudential Bluechip Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_70146"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_93094"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_70146'), {
+    new Chart(document.getElementById('yoy_fund_93094'), {
       type: 'bar',
       data: {
         labels: ['2024', '2025', '2026*'],
-        datasets: [{
-          data: [-3.5, -2.8, -1.8],
-          backgroundColor: ['#ef4444', '#ef4444', '#ef4444'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [15000, 30000, 7500],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [14280, 28140, 7343],
+            backgroundColor: ['"#ef4444"', '"#ef4444"', '"#ef4444"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -589,22 +691,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [-4.8, -6.2, -2.1];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -612,30 +708,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">DSP Natural Resources Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_4579"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_73040"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_4579'), {
+    new Chart(document.getElementById('yoy_fund_73040'), {
       type: 'bar',
       data: {
         labels: ['2023', '2024', '2025', '2026*'],
-        datasets: [{
-          data: [3.5, -8.1, -6.5, -5.2],
-          backgroundColor: ['#22c55e', '#ef4444', '#ef4444', '#ef4444'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [14000, 24000, 24000, 5000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [14728, 21000, 21888, 4695],
+            backgroundColor: ['"#22c55e"', '"#ef4444"', '"#ef4444"', '"#ef4444"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -644,22 +765,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [5.2, -12.5, -8.8, -6.1];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -667,30 +782,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Nippon India Small Cap Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_42865"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_77580"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_42865'), {
+    new Chart(document.getElementById('yoy_fund_77580'), {
       type: 'bar',
       data: {
         labels: ['2022', '2023', '2024', '2025', '2026*'],
-        datasets: [{
-          data: [-5.2, 15.8, 28.1, 24.5, 25.1],
-          backgroundColor: ['#ef4444', '#22c55e', '#22c55e', '#22c55e', '#22c55e'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [96000, 96000, 96000, 48000, 24000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [86208, 132960, 113472, 52080, 25152],
+            backgroundColor: ['"#ef4444"', '"#22c55e"', '"#22c55e"', '"#22c55e"', '"#22c55e"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -699,22 +839,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [-10.2, 38.5, 18.2, 8.5, 4.8];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -722,30 +856,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">Tata Digital India Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_31970"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_39806"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_31970'), {
+    new Chart(document.getElementById('yoy_fund_39806'), {
       type: 'bar',
       data: {
         labels: ['2024', '2025', '2026*'],
-        datasets: [{
-          data: [-10.5, -11.8, -12.5],
-          backgroundColor: ['#ef4444', '#ef4444', '#ef4444'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [25000, 0, 0],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [21200, 0, 0],
+            backgroundColor: ['"#ef4444"', '"#ef4444"', '"#ef4444"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -754,22 +913,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [-15.2, -18.5, -24.0];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -777,30 +930,55 @@
     });
     </script>
     <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">UTI Nifty 50 Index Fund - Direct Growth</div>
-    <div style="height:160px;margin-bottom:12px">
-      <canvas id="yoy_fund_65872"></canvas>
+    <div style="height:200px;margin-bottom:12px">
+      <canvas id="yoy_fund_48100"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('yoy_fund_65872'), {
+    new Chart(document.getElementById('yoy_fund_48100'), {
       type: 'bar',
       data: {
         labels: ['2024', '2025', '2026*'],
-        datasets: [{
-          data: [8.5, 7.2, 7.8],
-          backgroundColor: ['#22c55e', '#22c55e', '#22c55e'],
-          borderRadius: 6,
-          barPercentage: 0.7,
-        }]
+        datasets: [
+          {
+            label: 'Invested',
+            data: [24000, 24000, 6000],
+            backgroundColor: '#94a3b8',
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: 'Actual Value',
+            data: [25632, 25248, 6186],
+            backgroundColor: ['"#22c55e"', '"#22c55e"', '"#22c55e"'],
+            borderRadius: 4,
+            barPercentage: 0.8,
+            categoryPercentage: 0.7,
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: item => item.raw + '%' } }
+          legend: { labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: function(item) {
+                const v = item.raw;
+                const lbl = item.dataset.label;
+                return lbl + ': \u20B9' + (v >= 100000 ? (v/100000).toFixed(1) + 'L' : v.toLocaleString('en-IN'));
+              }
+            }
+          }
         },
         scales: {
           y: {
-            ticks: { font: { size: 11 }, callback: v => v + '%' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(v) {
+                return v >= 100000 ? (v/100000).toFixed(0) + 'L' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v;
+              }
+            },
             grid: { color: '#f1f5f9' }
           },
           x: { ticks: { font: { size: 11 } }, grid: { display: false } }
@@ -809,22 +987,16 @@
       plugins: [{
         afterDraw(chart) {
           const ctx = chart.ctx;
-          const meta = chart.getDatasetMeta(0);
+          const retVals = [6.8, 5.2, 3.1];
+          const meta = chart.getDatasetMeta(1);
           meta.data.forEach((bar, i) => {
-            const val = chart.data.datasets[0].data[i];
+            if (retVals[i] === null) return;
             ctx.save();
-            ctx.fillStyle = '#fff';
+            const val = retVals[i];
+            ctx.fillStyle = val >= 0 ? '#16a34a' : '#dc2626';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const barHeight = Math.abs(bar.base - bar.y);
-            if (barHeight > 18) {
-              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
-              ctx.fillText(val + '%', bar.x, yPos);
-            } else {
-              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
-              ctx.fillText(val + '%', bar.x, bar.y - 8);
-            }
+            ctx.fillText((val >= 0 ? '+' : '') + val + '%', bar.x, bar.y - 6);
             ctx.restore();
           });
         }
@@ -879,10 +1051,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_3136"></canvas>
+      <canvas id="chart_93077"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_3136'), {
+    new Chart(document.getElementById('chart_93077'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
@@ -978,10 +1150,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_42298"></canvas>
+      <canvas id="chart_45889"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_42298'), {
+    new Chart(document.getElementById('chart_45889'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -1077,10 +1249,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_84810"></canvas>
+      <canvas id="chart_89165"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_84810'), {
+    new Chart(document.getElementById('chart_89165'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -1176,10 +1348,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_83837"></canvas>
+      <canvas id="chart_48593"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_83837'), {
+    new Chart(document.getElementById('chart_48593'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -1217,7 +1389,7 @@
       <div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh"></span><span class="rh">1yr</span><span class="rh">3yr</span><span class="rh">5yr</span><span class="rh">10yr</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Fund</span><span class="rv" style="color:#dc2626">-2.50%</span><span class="rv" style="color:#16a34a">+8.10%</span><span class="rv" style="color:#16a34a">+10.20%</span><span class="rv" style="color:#16a34a">+12.80%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Bench</span><span class="rv" style="color:#64748b">+6.50%</span><span class="rv" style="color:#64748b">+11.30%</span><span class="rv" style="color:#64748b">+11.70%</span><span class="rv" style="color:#64748b">+12.00%</span></div><div class="returns-row" style="grid-template-columns: 50px repeat(4, 1fr)"><span class="rh">Alpha</span><span class="rv" style="color:#dc2626">-9.00%</span><span class="rv" style="color:#dc2626">-3.20%</span><span class="rv" style="color:#dc2626">-1.50%</span><span class="rv" style="color:#16a34a">+0.80%</span></div>
     </div>
 
-    <div class="flags"><span class="flag red">🚩 1yr alpha of -9.0%</span><span class="flag green">✅ 10yr alpha still positive</span></div>
+    <div class="flags"><span class="flag red">🚩 1yr alpha of -9.0%</span><span class="flag red">🚩 Deteriorating trend</span><span class="flag green">✅ 10yr alpha still positive</span></div>
 
     
     <details style="margin-top:10px">
@@ -1275,10 +1447,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_70146"></canvas>
+      <canvas id="chart_93094"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_70146'), {
+    new Chart(document.getElementById('chart_93094'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -1374,10 +1546,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_4579"></canvas>
+      <canvas id="chart_73040"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_4579'), {
+    new Chart(document.getElementById('chart_73040'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
@@ -1473,10 +1645,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_42865"></canvas>
+      <canvas id="chart_77580"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_42865'), {
+    new Chart(document.getElementById('chart_77580'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr'],
@@ -1572,10 +1744,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_31970"></canvas>
+      <canvas id="chart_39806"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_31970'), {
+    new Chart(document.getElementById('chart_39806'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr'],
@@ -1671,10 +1843,10 @@
 
     <!-- Returns chart -->
     <div class="chart-wrap">
-      <canvas id="chart_65872"></canvas>
+      <canvas id="chart_48100"></canvas>
     </div>
     <script>
-    new Chart(document.getElementById('chart_65872'), {
+    new Chart(document.getElementById('chart_48100'), {
       type: 'bar',
       data: {
         labels: ['1yr', '3yr', '5yr', '10yr', '15yr'],
