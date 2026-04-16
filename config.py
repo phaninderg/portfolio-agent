@@ -57,21 +57,6 @@ LLM_MODEL = _detect_llm_model()
 MFAPI_BASE   = "https://api.mfapi.in/mf"
 MFAPI_SEARCH = "https://api.mfapi.in/mf/search"
 
-# ── Benchmark map (fund category → yfinance ticker) ──────────────────────────
-BENCHMARK_MAP = {
-    "Large Cap":      "^NSEI",
-    "Mid Cap":        "^NSMIDCP",
-    "Small Cap":      "NIFTYSMLCAP250.NS",
-    "Flexi Cap":      "^CNX500",
-    "Multi Cap":      "^CNX500",
-    "ELSS":           "^CNX500",
-    "Debt":           None,
-    "Liquid":         None,
-    "International":  "^GSPC",
-    "Index":          "^NSEI",
-    "Other":          "^NSEI",
-}
-
 # ── Fund Discovery ────────────────────────────────────────────────────────────
 FUND_DISCOVERY_CACHE_TTL_DAYS    = int(os.getenv("FUND_CACHE_TTL_DAYS", "7"))
 FUND_DISCOVERY_MAX_PER_SEGMENT   = int(os.getenv("FUND_MAX_PER_SEGMENT", "15"))

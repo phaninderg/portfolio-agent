@@ -2,27 +2,31 @@
 
 A multi-agent system that analyses Indian mutual fund portfolios and provides actionable investment recommendations. Powered by a local LLM (LM Studio / Ollama) — **no portfolio data leaves your machine**.
 
-[View sample report](https://htmlpreview.github.io/?https://github.com/phaninderg/portfolio-agent/blob/main/docs/sample_report.html) — shows all verdict types (CONTINUE, INCREASE_SIP, RESTART_SIP, DECREASE_SIP, SWITCH, STOP_SIP, WITHDRAW_PARTIAL, WITHDRAW_FULL, PAUSE_SIP) with 10yr/15yr return data and consolidation recommendations.
+[View sample report](https://htmlpreview.github.io/?https://github.com/phaninderg/portfolio-agent/blob/main/docs/sample_report.html) — shows all 9 verdict types, year-on-year portfolio performance, per-fund SIP analysis, 10yr/15yr return data, and consolidation recommendations.
 
 ## What It Does
 
 ### For existing investors (`python main.py full`)
 - Parses your CAS PDF (Consolidated Account Statement from MF Central / CAMS / KFintech)
-- Fetches live NAV and returns (1yr / 3yr / 5yr / 10yr / 15yr) from [mfapi.in](https://www.mfapi.in/)
-- Benchmarks each fund against the appropriate index (Nifty 50, Midcap 150, etc.) via yfinance
-- Scores each fund with an Analyst Agent (trend, alpha, downside protection across all available horizons)
-- Generates per-fund verdicts: CONTINUE, INCREASE_SIP, SWITCH, STOP_SIP, etc.
-- Detects over-diversification (e.g. 3 Large Cap funds) and recommends consolidation
+- Fetches live NAV and returns (1yr / 3yr / 5yr / 10yr / 15yr) from mfapi.in
+- Cross-validates scheme codes against CAS transaction NAVs to catch wrong fund mappings
+- Benchmarks each fund against the appropriate index (Nifty 50, Midcap 150, etc.) via yfinance with alpha across all horizons
+- Computes year-on-year portfolio performance (cumulative invested vs actual value) and per-fund SIP analysis (each year's SIPs valued at year-end)
+- Scores each fund with an Analyst Agent (trend, alpha, downside protection, consistency across up to 5 horizons)
+- Generates per-fund verdicts: CONTINUE, INCREASE_SIP, RESTART_SIP, DECREASE_SIP, PAUSE_SIP, STOP_SIP, WITHDRAW_PARTIAL, WITHDRAW_FULL, SWITCH
+- Detects over-diversification (3+ funds in same category) and recommends consolidation into the best performer
 - SWITCH verdicts include data-backed alternatives ranked by live returns from the dynamic fund universe
-- Produces an interactive HTML dashboard and a chat interface for follow-up questions
+- Produces an interactive HTML dashboard with Chart.js visualisations and a multi-line chat interface for follow-up questions
 
 ### For new investors (`python main.py recommend`)
 - No CAS PDF needed — just enter your age, risk appetite, goal, and SIP budget
 - Dynamically discovers Direct Growth funds from the full mfapi.in master list (~37K schemes)
-- Filters, categorises into 12 segments, and ranks by live performance (1yr / 3yr / 5yr / 10yr / 15yr CAGR)
-- Allocates budget across: equity (large/mid/small cap), index funds, gold, silver, international, debt, hybrid, REITs
-- Enforces diversification: no single segment > 25%, minimum 5 asset classes
-- Generates a personalised HTML report with allocation chart and per-fund reasoning
+- Filters to ~5K Direct Growth plans, categorises into 12 segments via regex, applies AMC quality filters (tier-1/tier-2 priority), caps at 15 per segment (~168 candidates)
+- Fetches live 1yr / 3yr / 5yr / 10yr / 15yr CAGR for each candidate, drops funds with insufficient track record
+- Ranks by weighted composite score (30% 3yr + 25% 5yr + 18% 10yr + 15% 1yr + 12% 15yr, weights redistributed when longer periods unavailable)
+- Allocates budget across 12 asset segments with age/horizon adjustments
+- LLM personalises reasoning for each pick, highlighting long-term track records
+- Generates HTML report with allocation chart, per-fund reasoning, and alternatives considered
 
 ## Architecture
 
@@ -31,25 +35,31 @@ main.py                     Entry point — routes to the right pipeline
 config.py                   All settings from environment variables (.env)
 
 tools/
-  parse_cas.py              Parse CAS PDF -> holdings list
-  fetch_nav.py              Resolve fund names -> mfapi.in scheme codes -> 1yr/3yr/5yr/10yr/15yr returns
-  fetch_benchmark.py        Fetch index returns (up to 15yr) from yfinance -> compute alpha
-  xirr.py                   XIRR and CAGR calculations (no dependencies)
+  parse_cas.py              Parse CAS PDF -> holdings list with full transaction history
+  fetch_nav.py              Resolve fund names -> scheme codes (with NAV cross-validation)
+                            -> 1yr/3yr/5yr/10yr/15yr returns from mfapi.in
+  fetch_benchmark.py        Fetch benchmark index returns (up to 15yr) from yfinance -> alpha
+  xirr.py                   XIRR and CAGR calculations (zero dependencies)
+  yoy_xirr.py              Year-on-year XIRR: cumulative portfolio + per-fund SIP year-slice
   user_profile.py           Interactive investor profile collector
-  fund_discovery.py         Dynamic fund discovery: master list fetch, Direct Growth filter,
-                            segment categorisation, AMC quality filter, 7-day cache
-  fund_universe.py          Allocation engine, live enrichment, ranking, fund selection
-  formatting.py             Shared formatters, helpers, and LLM response parsing
+  fund_discovery.py         Dynamic fund discovery from mfapi.in master list (~37K schemes)
+                            -> Direct Growth filter -> segment categorisation -> AMC quality
+                            filter -> 7-day disk cache
+  fund_universe.py          Allocation engine, live enrichment, composite ranking, fund selection
+  formatting.py             Shared formatters, display constants (SEGMENT_ICON/COLOR),
+                            LLM response parsing, portfolio stats
 
 agent/
-  orchestrator.py           Coordinates all agents in sequence
-  analyst.py                Scores each fund (1 LLM call per fund, uses all available horizons)
-  advisor.py                Generates verdicts (1 LLM call for all funds)
+  orchestrator.py           Coordinates all agents: data -> research -> YoY -> analyst -> advisor
+  analyst.py                Scores each fund individually (1 LLM call per fund)
+  advisor.py                Generates verdicts for all funds (1 LLM call), handles consolidation
+  prompts.py                Advisor system prompt with consolidation rules, SIP status rules,
+                            bear market rules, and dynamic switch alternatives injection
   recommender.py            New-investor recommendation engine + LLM reasoning
-  report.py                 HTML dashboard for existing portfolio analysis
+  report.py                 HTML dashboard: YoY portfolio chart, fund cards with dynamic
+                            return columns, Chart.js bar charts, action items
   recommend_report.py       HTML dashboard for new investor recommendations
-  prompts.py                System prompts for advisor agent + consolidation rules
-  chat.py                   Interactive Q&A chat after analysis
+  chat.py                   Interactive multi-line Q&A chat after analysis
 ```
 
 ## Quick Start
@@ -62,7 +72,7 @@ agent/
 ### Setup
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/phaninderg/portfolio-agent.git
 cd portfolio-agent
 
 python -m venv venv
@@ -109,34 +119,89 @@ python main.py advise
 | Command | What it does | Needs CAS PDF | Needs LLM |
 |---------|-------------|:---:|:---:|
 | `python main.py recommend` | Build a new portfolio from scratch | No | Yes (optional) |
-| `python main.py full` | Full analysis: parse + enrich + score + advise + report + chat | Yes | Yes |
+| `python main.py full` | Full analysis: parse + enrich + YoY + score + advise + report + chat | Yes | Yes |
 | `python main.py data` | Parse CAS + fetch returns + benchmark comparison | Yes | No |
 | `python main.py advise` | Data pipeline + single LLM verdict call | Yes | Yes |
 
-## How the Recommend Pipeline Works
+## Full Analysis Pipeline
 
-1. **Profile** — Collects age, risk appetite, goal, horizon, SIP budget
-2. **Allocation** — Maps risk profile to segment percentages, adjusts for age/horizon
-3. **Dynamic Discovery** — Fetches the full mfapi.in master list (~37K schemes), filters for Direct Growth (~5K), categorises into 12 segments via regex, applies AMC quality filters (tier-1/tier-2 priority), caps at 15 per segment (~168 candidates). Results cached for 7 days.
-4. **Live Enrichment** — Fetches actual 1yr / 3yr / 5yr / 10yr / 15yr CAGR from mfapi.in for each candidate. Drops funds with < 3yr track record.
-5. **Ranking** — Scores each fund (30% 3yr + 25% 5yr + 18% 10yr + 15% 1yr + 12% 15yr, weights redistributed when longer periods unavailable), picks the best per segment
-6. **LLM Reasoning** — Local LLM personalises the reasoning for each pick (gracefully falls back to generated reasoning if LLM is unavailable)
-7. **Output** — Terminal summary + `output/recommendations.json` + `output/recommend_report.html`
+```
+CAS PDF
+  |
+  v
+[1. Parse] ── casparser ── holdings with full transaction history
+  |
+  v
+[2. Enrich Returns] ── mfapi.in ── 1yr/3yr/5yr/10yr/15yr returns per fund
+  |                                  (scheme codes validated against CAS NAV)
+  v
+[3. Enrich Benchmarks] ── yfinance ── benchmark returns + alpha per horizon
+  |
+  v
+[4. Year-on-Year XIRR] ── NAV history ── cumulative portfolio XIRR + per-fund year-slice
+  |
+  v
+[5. Analyst Agent] ── 1 LLM call per fund ── trend, alpha score, flags
+  |
+  v
+[6. Advisor Agent] ── 1 LLM call all funds ── verdicts + consolidation + switch alternatives
+  |
+  v
+[7. HTML Report] ── Chart.js ── YoY chart, fund cards, action items
+  |
+  v
+[8. Interactive Chat] ── streaming LLM ── follow-up Q&A with full portfolio context
+```
 
-## How the Full Analysis Pipeline Works
+## Recommend Pipeline
 
-1. **Parse** — Extracts holdings from CAS PDF via casparser
-2. **Enrich** — Fetches live returns (1yr / 3yr / 5yr / 10yr / 15yr) from mfapi.in, benchmark returns from yfinance, computes alpha across all horizons
-3. **Analyse** — Analyst agent scores each fund individually (trend, alpha, downside, consistency) using all available return horizons
-4. **Advise** — Advisor agent generates verdicts considering:
-   - Fund performance vs benchmark across all horizons (1yr through 15yr)
-   - SIP status (active / inactive / never)
-   - Portfolio consolidation — flags over-diversification (3+ funds in same category) and recommends merging into the best performer
-   - SWITCH recommendations backed by top-ranked alternatives from the dynamic discovery universe
-5. **Report** — HTML dashboard with charts showing all available return periods
-6. **Chat** — Interactive follow-up Q&A
+```
+Interactive Profile (age, risk, goal, horizon, budget)
+  |
+  v
+[1. Allocation] ── risk profile + age/horizon adjustments ── segment percentages
+  |
+  v
+[2. Discovery] ── mfapi.in master list ── 37K schemes -> 5K Direct Growth -> 168 candidates
+  |                (cached 7 days)
+  v
+[3. Live Enrichment] ── mfapi.in ── 1yr/3yr/5yr/10yr/15yr CAGR per candidate
+  |
+  v
+[4. Ranking] ── weighted composite score ── best fund per segment
+  |
+  v
+[5. LLM Reasoning] ── personalised rationale per pick
+  |
+  v
+[6. HTML Report] ── allocation chart + per-fund cards with alternatives
+```
 
-### Asset Segments Covered
+## Report Features
+
+### Year-on-Year Portfolio Performance
+- **Portfolio level**: Cumulative invested vs actual value at each Dec 31, with return % labels
+- **Per-fund drill-down**: Year-slice SIP analysis — only that year's investments valued at year-end, showing XIRR for each year independently
+- Green bars for gains, red for losses, current year marked with asterisk
+
+### Fund Analysis Cards
+- Dynamic return columns (3 to 5 columns: 1yr/3yr/5yr + 10yr/15yr when available)
+- Fund vs benchmark bar chart per fund
+- Returns detail table: Fund / Benchmark / Alpha rows
+- Analyst flags (red/green) and trend badges
+- SIP status badges (active/inactive/never) with last purchase date
+- Monthly SIP history (expandable)
+
+### Verdicts
+9 possible actions: CONTINUE, INCREASE_SIP, RESTART_SIP, DECREASE_SIP, PAUSE_SIP, STOP_SIP, WITHDRAW_PARTIAL, WITHDRAW_FULL, SWITCH — each with confidence level and reasoning.
+
+### Consolidation
+Detects when 3+ funds overlap in the same category. Recommends merging into the best performer with `consolidate_into` field.
+
+### SWITCH Alternatives
+When recommending SWITCH, injects top-ranked alternatives per segment from the dynamic discovery cache — real funds with live return data, not LLM guesswork.
+
+## Asset Segments
 
 | Segment | Conservative | Moderate | Aggressive |
 |---------|:-----------:|:--------:|:----------:|
@@ -156,7 +221,7 @@ Allocations are further adjusted based on age and investment horizon.
 
 ## Configuration
 
-All settings are loaded from environment variables. See [`.env.example`](.env.example) for the full list.
+All settings loaded from environment variables. See [`.env.example`](.env.example) for the full list.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -178,17 +243,16 @@ All settings are loaded from environment variables. See [`.env.example`](.env.ex
 
 | Source | Used For | Rate Limit |
 |--------|----------|-----------|
-| [mfapi.in](https://www.mfapi.in/) | Master fund list, NAV history, 1yr/3yr/5yr/10yr/15yr returns | ~0.3s delay between calls |
-| [yfinance](https://github.com/ranaroussi/yfinance) | Benchmark index returns up to 15yr (Nifty 50, Midcap 150, etc.) | ~0.5s delay between calls |
-| [casparser](https://github.com/codereverser/casparser) | CAS PDF parsing | Local only |
+| [mfapi.in](https://www.mfapi.in/) | Master fund list (~37K schemes), NAV history, returns up to 15yr, scheme code resolution | ~0.3s delay between calls |
+| [yfinance](https://github.com/ranaroussi/yfinance) | Benchmark index returns up to 15yr (Nifty 50, Midcap 150, S&P 500, etc.) | ~0.5s delay between calls |
+| [casparser](https://github.com/codereverser/casparser) | CAS PDF parsing into structured holdings + transactions | Local only |
 
 ## Privacy
 
 - All portfolio data stays on your machine
 - LLM runs locally via LM Studio — no data sent to cloud APIs
 - No analytics, telemetry, or external tracking
-- CAS PDF and output files are gitignored
-- Fund discovery cache stored locally in `data/fund_universe_cache.json`
+- CAS PDF, output files, and fund discovery cache are gitignored
 
 ## Disclaimer
 

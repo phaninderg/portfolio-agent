@@ -9,39 +9,7 @@ from datetime import date
 from pathlib import Path
 
 from tools.fund_universe import SEGMENTS
-
-
-# ── Segment colours ──────────────────────────────────────────────────────────
-
-SEGMENT_COLOR = {
-    "large_cap":     "#3b82f6",   # blue
-    "mid_cap":       "#8b5cf6",   # violet
-    "small_cap":     "#ec4899",   # pink
-    "flexi_cap":     "#06b6d4",   # cyan
-    "index":         "#6366f1",   # indigo
-    "elss":          "#14b8a6",   # teal
-    "gold":          "#f59e0b",   # amber
-    "silver":        "#94a3b8",   # slate
-    "international": "#10b981",   # emerald
-    "debt":          "#64748b",   # cool gray
-    "hybrid":        "#f97316",   # orange
-    "reit":          "#a855f7",   # purple
-}
-
-SEGMENT_ICON = {
-    "large_cap":     "🏢",
-    "mid_cap":       "🏗️",
-    "small_cap":     "🚀",
-    "flexi_cap":     "🎯",
-    "index":         "📊",
-    "elss":          "🏷️",
-    "gold":          "🥇",
-    "silver":        "🥈",
-    "international": "🌍",
-    "debt":          "🏦",
-    "hybrid":        "⚖️",
-    "reit":          "🏠",
-}
+from tools.formatting import SEGMENT_COLOR, SEGMENT_ICON
 
 
 def _inr(val) -> str:

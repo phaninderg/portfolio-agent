@@ -1,10 +1,8 @@
 """
-Fund universe for new investor recommendations.
+Fund universe for investor recommendations.
 
-Two modes:
-  1. DYNAMIC (default): Discovers Direct Growth funds from mfapi.in master list,
-     categorises into segments, fetches live returns including 10yr/15yr CAGR.
-  2. FALLBACK: Uses a hardcoded curated list when mfapi.in is unreachable.
+Discovers Direct Growth funds dynamically from mfapi.in master list,
+categorises into segments, fetches live returns including 10yr/15yr CAGR.
 
 At runtime, `enrich_fund_universe()` fetches LIVE returns from mfapi.in
 and `pick_funds_live()` ranks candidates by actual current performance.
@@ -189,8 +187,7 @@ def get_allocation(risk: str, age: int, horizon: int) -> dict[str, float]:
 # LIVE DATA: fetch real returns from mfapi.in and rank funds dynamically
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Minimum fund age (years) to be considered for recommendation
-_MIN_TRACK_RECORD_YRS = 3
+from config import FUND_DISCOVERY_MIN_TRACK_RECORD as _MIN_TRACK_RECORD_YRS
 
 
 def _generate_why(fund: dict) -> str:

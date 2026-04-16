@@ -162,7 +162,7 @@ def generate_report(
     total_pnl_pct  = (total_pnl / total_invested * 100) if total_invested else 0
 
     # Portfolio XIRR (recompute from output)
-    portfolio_xirr = _portfolio_xirr(holdings)
+    portfolio_xirr = compute_portfolio_xirr(holdings)
 
     from collections import Counter
     verdict_counts = Counter(v.get("verdict", "CONTINUE") for v in verdicts)
@@ -793,7 +793,3 @@ def _action_items_html(verdicts: list[dict]) -> str:
     <h2>⚡ This Week's Action Items</h2>
     {items_html}
   </div>"""
-
-
-# ── Portfolio XIRR helper ─────────────────────────────────────────────────────
-_portfolio_xirr = compute_portfolio_xirr

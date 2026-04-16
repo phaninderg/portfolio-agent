@@ -68,10 +68,7 @@ def _ticker_for_category(category: str | None) -> str | None:
     return "^NSEI"   # default
 
 
-def _compute_cagr(old, new, years):
-    """Delegate to shared implementation."""
-    from tools.xirr import compute_cagr
-    return compute_cagr(old, new, years)
+from tools.xirr import compute_cagr as _compute_cagr
 
 
 def fetch_benchmark_returns(ticker: str) -> dict:

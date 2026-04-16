@@ -12,12 +12,11 @@ from pathlib import Path
 
 import requests
 
+from config import MFAPI_BASE, MFAPI_SEARCH
+
 # Project root
 _ROOT = Path(__file__).parent.parent
 _SCHEME_CODES_FILE = _ROOT / "scheme_codes.json"
-
-MFAPI_BASE   = "https://api.mfapi.in/mf"
-MFAPI_SEARCH = "https://api.mfapi.in/mf/search"
 
 # Approx trading days per year (used to step back in NAV array)
 DAYS_1YR  = 365
@@ -203,10 +202,7 @@ def _compute_return(nav_old: float | None, nav_new: float | None) -> float | Non
     return round(((nav_new / nav_old) - 1) * 100, 2)
 
 
-def _compute_cagr(nav_old, nav_new, years):
-    """Delegate to shared implementation."""
-    from tools.xirr import compute_cagr
-    return compute_cagr(nav_old, nav_new, years)
+from tools.xirr import compute_cagr as _compute_cagr
 
 
 def fetch_fund_returns(scheme_code: str) -> dict:

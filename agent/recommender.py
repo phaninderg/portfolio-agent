@@ -24,6 +24,7 @@ from tools.fund_universe import (
     get_allocation, pick_funds_live, enrich_fund_universe,
     SEGMENTS, ALLOCATION_TEMPLATES,
 )
+from tools.formatting import SEGMENT_ICON
 
 
 # ── System prompt ────────────────────────────────────────────────────────────
@@ -257,21 +258,6 @@ def print_recommendations(result: dict) -> None:
     recs = result["recommendations"]
     profile = result["user_profile"]
     llm = result.get("llm_analysis") or {}
-
-    SEGMENT_ICON = {
-        "large_cap":     "🏢",
-        "mid_cap":       "🏗️",
-        "small_cap":     "🚀",
-        "flexi_cap":     "🎯",
-        "index":         "📊",
-        "elss":          "🏷️",
-        "gold":          "🥇",
-        "silver":        "🥈",
-        "international": "🌍",
-        "debt":          "🏦",
-        "hybrid":        "⚖️",
-        "reit":          "🏠",
-    }
 
     total_sip = sum(r["sip_amount"] for r in recs)
 

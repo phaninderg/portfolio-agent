@@ -5,7 +5,6 @@ Uses LM Studio's OpenAI-compatible local API.
 """
 
 from __future__ import annotations
-import json
 
 from openai import OpenAI
 
