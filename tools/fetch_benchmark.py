@@ -68,7 +68,7 @@ def _ticker_for_category(category: str | None) -> str | None:
     return "^NSEI"   # default
 
 
-from tools.xirr import compute_cagr as _compute_cagr
+from tools.xirr import compute_cagr as compute_cagr
 
 
 def fetch_benchmark_returns(ticker: str) -> dict:
@@ -137,11 +137,11 @@ def fetch_benchmark_returns(ticker: str) -> dict:
     p10y = price_n_years_ago(10)
     p15y = price_n_years_ago(15)
 
-    result["return_1yr"]  = _compute_cagr(p1y,  current, 1)  if p1y  else None
-    result["return_3yr"]  = _compute_cagr(p3y,  current, 3)  if p3y  else None
-    result["return_5yr"]  = _compute_cagr(p5y,  current, 5)  if p5y  else None
-    result["return_10yr"] = _compute_cagr(p10y, current, 10) if p10y else None
-    result["return_15yr"] = _compute_cagr(p15y, current, 15) if p15y else None
+    result["return_1yr"]  = compute_cagr(p1y,  current, 1)  if p1y  else None
+    result["return_3yr"]  = compute_cagr(p3y,  current, 3)  if p3y  else None
+    result["return_5yr"]  = compute_cagr(p5y,  current, 5)  if p5y  else None
+    result["return_10yr"] = compute_cagr(p10y, current, 10) if p10y else None
+    result["return_15yr"] = compute_cagr(p15y, current, 15) if p15y else None
 
     return result
 
@@ -169,7 +169,9 @@ def get_benchmark_for_fund(fund_category: str | None) -> dict:
 
     print(f"  [fetch_benchmark] Fetching {ticker} for category '{fund_category}'")
     data = fetch_benchmark_returns(ticker)
-    _benchmark_cache[ticker] = data
+    # Only cache successful fetches — failed ones should retry next call
+    if data.get("current_price") is not None:
+        _benchmark_cache[ticker] = data
     time.sleep(0.5)   # gentle rate limit
     return data
 

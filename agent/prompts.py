@@ -172,8 +172,6 @@ def _get_switch_alternatives(holdings: list[dict]) -> str:
     """
     try:
         from tools.fund_discovery import discover_fund_universe, categorize_fund
-        from tools.fetch_nav import fetch_fund_returns
-        from tools.fund_universe import _rank_score
 
         # Determine which segments the user's holdings span
         segments_needed = set()

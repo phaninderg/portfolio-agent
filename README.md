@@ -2,7 +2,9 @@
 
 A multi-agent system that analyses Indian mutual fund portfolios and provides actionable investment recommendations. Powered by a local LLM (LM Studio / Ollama) — **no portfolio data leaves your machine**.
 
-[View sample report](https://htmlpreview.github.io/?https://github.com/phaninderg/portfolio-agent/blob/main/docs/sample_report.html) — shows all 9 verdict types, year-on-year portfolio performance, per-fund SIP analysis, 10yr/15yr return data, and consolidation recommendations.
+[View sample report](https://htmlpreview.github.io/?https://github.com/phaninderg/portfolio-agent/blob/main/docs/sample_report.html) — portfolio analysis with all 9 verdict types, YoY performance, 10yr/15yr returns, and consolidation recommendations.
+
+[View sample withdrawal report](https://htmlpreview.github.io/?https://github.com/phaninderg/portfolio-agent/blob/main/docs/sample_withdrawal_report.html) — tax-optimized ₹10L withdrawal plan showing fund-wise redemption, tax breakdown, and LTCG exemption usage.
 
 ## What It Does
 

@@ -3,9 +3,10 @@ Portfolio Advisor — Entry Point
 
 Commands:
   python main.py              — full pipeline (default, needs CAS PDF)
-  python main.py data         — data pipeline only (parse + enrich)
+  python main.py data         — data pipeline + YoY XIRR + HTML report (no LLM, needs CAS PDF)
   python main.py advise       — data pipeline + single LLM advisor call
-  python main.py recommend    — NEW: build a fresh MF portfolio (no CAS needed)
+  python main.py recommend    — build a fresh MF portfolio (no CAS needed)
+  python main.py withdraw     — tax-optimized withdrawal plan (needs CAS PDF)
 """
 
 from __future__ import annotations
@@ -138,6 +139,44 @@ def build_data_pipeline(user_profile: dict) -> list[dict]:
     return holdings
 
 
+def run_data_with_report(user_profile: dict) -> None:
+    """
+    Data pipeline + YoY XIRR + HTML report (no LLM needed).
+    Generates a report with portfolio summary, YoY chart, and fund cards
+    using data-only verdicts (no LLM analysis).
+    """
+    from agent.report import generate_report
+    from tools.yoy_xirr import enrich_holdings_with_yoy_xirr
+    from config import REPORT_HTML_PATH
+
+    holdings = build_data_pipeline(user_profile)
+
+    print("\n── Step 5: Year-on-Year XIRR ────────────────────────────────────")
+    holdings, yoy_portfolio = enrich_holdings_with_yoy_xirr(holdings)
+
+    # Build data-only verdicts (no LLM — just placeholder)
+    verdicts = [
+        {"fund_name": h["fund_name"], "verdict": "CONTINUE", "trend": "unknown",
+         "confidence": "low", "switch_to": None, "consolidate_into": None,
+         "reasoning": "Run 'python main.py full' for LLM-powered verdicts."}
+        for h in holdings
+    ]
+
+    nifty_1yr = next(
+        (h.get("benchmark_return_1yr") for h in holdings
+         if h.get("benchmark_ticker") == "^NSEI"), None)
+    market_condition = detect_market_condition(nifty_1yr)
+
+    print("\n── Step 6: HTML Report ──────────────────────────────────────────")
+    yoy_data = {"portfolio": yoy_portfolio} if yoy_portfolio else None
+    report_path = generate_report(
+        holdings, verdicts, user_profile,
+        market_condition, REPORT_HTML_PATH,
+        yoy_data=yoy_data,
+    )
+    print(f"✅  Open in browser: open \"{report_path}\"\n")
+
+
 def run_single_advisor(holdings: list[dict], user_profile: dict) -> None:
     """Run a single LLM advisor call and print verdicts (no analyst scoring)."""
     print("\n── Single LLM Advisor ────────────────────────────────────────────")
@@ -188,6 +227,43 @@ def run_recommend(user_profile: dict) -> None:
     print(f"✅  Open in browser: open \"{report_path}\"\n")
 
 
+def run_withdrawal(user_profile: dict) -> None:
+    """
+    Tax-optimized withdrawal: parse CAS, enrich, then compute optimal
+    fund-wise redemption plan that minimizes tax.
+    """
+    from tools.tax_optimizer import optimize_withdrawal, print_withdrawal_plan
+    from tools.user_profile import collect_withdrawal_params
+    from agent.withdrawal_report import generate_withdrawal_report
+
+    print("\n🚀  Portfolio Advisor — Tax-Optimized Withdrawal")
+
+    holdings = build_data_pipeline(user_profile)
+
+    total_value = sum(h.get("current_value", 0) or 0 for h in holdings)
+    print(f"\n  Portfolio value: ₹{total_value:,.0f}")
+
+    params = collect_withdrawal_params()
+
+    if params["withdrawal_amount"] > total_value:
+        print(f"\n  ❌ Withdrawal amount ₹{params['withdrawal_amount']:,} exceeds portfolio value ₹{total_value:,.0f}")
+        return
+
+    plan = optimize_withdrawal(
+        holdings, params["withdrawal_amount"],
+        params["ltcg_exemption_used"], params["debt_slab_rate"],
+    )
+
+    print_withdrawal_plan(plan, params["withdrawal_amount"])
+
+    out_dir = Path(__file__).parent / "output"
+    out_dir.mkdir(exist_ok=True)
+    report_path = generate_withdrawal_report(
+        plan, params, str(out_dir / "withdrawal_report.html"),
+    )
+    print(f"\n✅  Open in browser: open \"{report_path}\"\n")
+
+
 def run_full_analysis(user_profile: dict) -> None:
     """
     Full multi-agent pipeline: parse → enrich → score → advise → report → chat.
@@ -227,11 +303,13 @@ if __name__ == "__main__":
 
     command = sys.argv[1] if len(sys.argv) > 1 else "full"
     if command == "data":
-        build_data_pipeline(user_profile)
+        run_data_with_report(user_profile)
     elif command == "advise":
         holdings = build_data_pipeline(user_profile)
         run_single_advisor(holdings, user_profile)
     elif command == "recommend":
         run_recommend(user_profile)
+    elif command == "withdraw":
+        run_withdrawal(user_profile)
     else:
         run_full_analysis(user_profile)

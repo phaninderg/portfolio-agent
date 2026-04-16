@@ -57,6 +57,12 @@ LLM_MODEL = _detect_llm_model()
 MFAPI_BASE   = "https://api.mfapi.in/mf"
 MFAPI_SEARCH = "https://api.mfapi.in/mf/search"
 
+# ── Tax Rules (FY 2025-26) ────────────────────────────────────────────────────
+EQUITY_LTCG_RATE       = float(os.getenv("EQUITY_LTCG_RATE", "0.125"))       # 12.5%
+EQUITY_STCG_RATE       = float(os.getenv("EQUITY_STCG_RATE", "0.20"))        # 20%
+LTCG_EXEMPTION_LIMIT   = int(os.getenv("LTCG_EXEMPTION_LIMIT", "125000"))    # 1.25L per FY
+EQUITY_LTCG_DAYS       = int(os.getenv("EQUITY_LTCG_DAYS", "365"))           # >365 days = long term
+
 # ── Fund Discovery ────────────────────────────────────────────────────────────
 FUND_DISCOVERY_CACHE_TTL_DAYS    = int(os.getenv("FUND_CACHE_TTL_DAYS", "7"))
 FUND_DISCOVERY_MAX_PER_SEGMENT   = int(os.getenv("FUND_MAX_PER_SEGMENT", "15"))

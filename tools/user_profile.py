@@ -141,3 +141,30 @@ def _print_profile_summary(profile: dict, suggested_risk: str, age: int) -> None
     }
     print(f"\n  Note: {notes[risk]}")
     print("=" * 70 + "\n")
+
+
+# ── Withdrawal params ────────────────────────────────────────────────────────
+
+_SLAB_CHOICES = ["0", "5", "10", "15", "20", "25", "30"]
+
+
+def collect_withdrawal_params() -> dict:
+    """Interactively collect parameters for tax-optimized withdrawal."""
+    print("\n" + "=" * 70)
+    print("  TAX-OPTIMIZED WITHDRAWAL")
+    print("  Press Enter to keep the value shown in [brackets]")
+    print("=" * 70)
+
+    amount = _ask_int("Withdrawal amount (₹)", 200000, lo=1000, hi=100_000_000)
+    ltcg_used = _ask_int("LTCG exemption already used this FY (₹)", 0, lo=0, hi=125000)
+    slab_str = _ask_choice("Your income tax slab rate (%)", _SLAB_CHOICES, "30")
+    slab_rate = int(slab_str) / 100.0
+
+    print(f"\n  Amount: ₹{amount:,} | LTCG used: ₹{ltcg_used:,} | Debt slab: {int(slab_rate*100)}%")
+    print("=" * 70 + "\n")
+
+    return {
+        "withdrawal_amount": amount,
+        "ltcg_exemption_used": ltcg_used,
+        "debt_slab_rate": slab_rate,
+    }

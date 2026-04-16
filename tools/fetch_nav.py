@@ -202,7 +202,7 @@ def _compute_return(nav_old: float | None, nav_new: float | None) -> float | Non
     return round(((nav_new / nav_old) - 1) * 100, 2)
 
 
-from tools.xirr import compute_cagr as _compute_cagr
+from tools.xirr import compute_cagr as compute_cagr
 
 
 def fetch_fund_returns(scheme_code: str) -> dict:
@@ -271,10 +271,10 @@ def fetch_fund_returns(scheme_code: str) -> dict:
     nav_15y  = _find_nav_n_days_ago(nav_history, DAYS_15YR)
 
     result["return_1yr"]  = _compute_return(nav_1y, nav_now)
-    result["return_3yr"]  = _compute_cagr(nav_3y, nav_now, 3)
-    result["return_5yr"]  = _compute_cagr(nav_5y, nav_now, 5)
-    result["return_10yr"] = _compute_cagr(nav_10y, nav_now, 10)
-    result["return_15yr"] = _compute_cagr(nav_15y, nav_now, 15)
+    result["return_3yr"]  = compute_cagr(nav_3y, nav_now, 3)
+    result["return_5yr"]  = compute_cagr(nav_5y, nav_now, 5)
+    result["return_10yr"] = compute_cagr(nav_10y, nav_now, 10)
+    result["return_15yr"] = compute_cagr(nav_15y, nav_now, 15)
 
     return result
 

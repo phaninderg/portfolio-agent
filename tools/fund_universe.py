@@ -220,7 +220,7 @@ def enrich_fund_universe(segments_needed: set[str] | None = None) -> list[dict]:
     Fetch LIVE NAV + returns from mfapi.in for fund candidates.
 
     Uses dynamic discovery (mfapi.in master list) to find Direct Growth funds
-    across all segments. Raises on failure (no hardcoded fallback).
+    across all segments. Funds without a scheme_code are skipped.
 
     Each fund dict includes:
       - live_return_1yr, live_return_3yr, live_return_5yr  (actual % from mfapi)
