@@ -298,10 +298,14 @@ def run_full_analysis(user_profile: dict) -> None:
 # ── entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    # Collect investor profile interactively; config.py values are the defaults
-    user_profile = collect_user_profile(USER_PROFILE)
-
     command = sys.argv[1] if len(sys.argv) > 1 else "full"
+
+    # Only collect investor profile for commands that use it for LLM personalisation
+    if command in ("data", "withdraw"):
+        user_profile = USER_PROFILE  # use config defaults, no interactive prompt
+    else:
+        user_profile = collect_user_profile(USER_PROFILE)
+
     if command == "data":
         run_data_with_report(user_profile)
     elif command == "advise":
