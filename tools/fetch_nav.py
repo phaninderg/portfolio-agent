@@ -91,7 +91,7 @@ def resolve_scheme_code(fund_name: str, cache: dict[str, str]) -> str | None:
 
 # ── NAV + returns ─────────────────────────────────────────────────────────────
 
-def _fetch_nav_history(scheme_code: str, retries: int = 3) -> list[dict]:
+def fetch_nav_history(scheme_code: str, retries: int = 3) -> list[dict]:
     """Fetch full NAV history from mfapi.in. Returns list [{date, nav}, ...]."""
     url = f"{MFAPI_BASE}/{scheme_code}"
     for attempt in range(1, retries + 1):

@@ -152,6 +152,7 @@ def generate_report(
     user_profile: dict,
     market_condition: str,
     output_path: str,
+    yoy_data: dict | None = None,
 ) -> str:
     verdict_map = {v["fund_name"]: v for v in verdicts}
 
@@ -348,6 +349,9 @@ def generate_report(
     </div>
   </div>
 
+  <!-- Year-on-Year XIRR -->
+  {_yoy_section_html(holdings, yoy_data)}
+
   <!-- Fund Cards -->
   <div class="section-title">Fund Analysis</div>
   <div class="fund-grid">
@@ -443,6 +447,130 @@ def _returns_table(h: dict) -> str:
     alpha_row += '</div>'
 
     return hdr + fund_row + bm_row + alpha_row
+
+
+# ── Year-on-Year XIRR Section ────────────────────────────────────────────────
+
+def _yoy_bar_chart(chart_id: str, yoy_data: dict[int, float | None], height: int = 280, title: str = "") -> str:
+    """Render a single YoY XIRR bar chart with embedded value labels."""
+    current_year = date.today().year
+    sorted_years = sorted(y for y, v in yoy_data.items() if v is not None)
+    if not sorted_years:
+        return '<div style="color:#94a3b8;font-size:12px;padding:16px">No year-on-year data available.</div>'
+
+    labels = []
+    values = []
+    colors = []
+    for y in sorted_years:
+        v = yoy_data[y]
+        labels.append(f"{y}*" if y == current_year else str(y))
+        values.append(round(v, 1))
+        colors.append("#22c55e" if v >= 0 else "#ef4444")
+
+    title_html = f'<div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:8px">{title}</div>' if title else ""
+
+    return f"""
+    {title_html}
+    <div style="height:{height}px;margin-bottom:12px">
+      <canvas id="{chart_id}"></canvas>
+    </div>
+    <script>
+    new Chart(document.getElementById('{chart_id}'), {{
+      type: 'bar',
+      data: {{
+        labels: {labels},
+        datasets: [{{
+          data: {values},
+          backgroundColor: {colors},
+          borderRadius: 6,
+          barPercentage: 0.7,
+        }}]
+      }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        plugins: {{
+          legend: {{ display: false }},
+          tooltip: {{ callbacks: {{ label: item => item.raw + '%' }} }}
+        }},
+        scales: {{
+          y: {{
+            ticks: {{ font: {{ size: 11 }}, callback: v => v + '%' }},
+            grid: {{ color: '#f1f5f9' }}
+          }},
+          x: {{ ticks: {{ font: {{ size: 11 }} }}, grid: {{ display: false }} }}
+        }}
+      }},
+      plugins: [{{
+        afterDraw(chart) {{
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, i) => {{
+            const val = chart.data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const barHeight = Math.abs(bar.base - bar.y);
+            if (barHeight > 18) {{
+              const yPos = val >= 0 ? bar.y + barHeight / 2 : bar.y - barHeight / 2;
+              ctx.fillText(val + '%', bar.x, yPos);
+            }} else {{
+              ctx.fillStyle = val >= 0 ? '#22c55e' : '#ef4444';
+              ctx.fillText(val + '%', bar.x, bar.y - 8);
+            }}
+            ctx.restore();
+          }});
+        }}
+      }}]
+    }});
+    </script>"""
+
+
+def _yoy_section_html(holdings: list[dict], yoy_data: dict | None) -> str:
+    """Build the Year-on-Year XIRR section with portfolio chart and fund drill-down."""
+    if not yoy_data:
+        return ""
+
+    portfolio_yoy = yoy_data.get("portfolio", {})
+    if not any(v is not None for v in portfolio_yoy.values()):
+        return ""
+
+    # Portfolio-level chart
+    portfolio_chart = _yoy_bar_chart("yoy_portfolio", portfolio_yoy, height=280)
+
+    # Per-fund drill-down charts
+    fund_charts = ""
+    for h in holdings:
+        fund_yoy = h.get("yoy_xirr", {})
+        valid_years = {y: v for y, v in fund_yoy.items() if v is not None}
+        if not valid_years:
+            continue
+        chart_id = f"yoy_fund_{abs(hash(h['fund_name'])) % 99999}"
+        fund_charts += _yoy_bar_chart(chart_id, valid_years, height=160, title=h["fund_name"])
+
+    current_year = date.today().year
+    return f"""
+    <div style="margin:30px 0">
+      <div class="section-title">Year-on-Year Portfolio XIRR</div>
+      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">
+          Cumulative XIRR at each year-end (all cash flows from inception valued at Dec 31 NAV).
+          {current_year}* = year-to-date.
+        </div>
+        {portfolio_chart}
+
+        <details style="margin-top:16px">
+          <summary style="font-size:12px;font-weight:600;color:#475569;cursor:pointer;
+                          list-style:none;display:flex;align-items:center;gap:4px">
+            ▸ Per-Fund Year-on-Year XIRR
+          </summary>
+          <div style="margin-top:12px">
+            {fund_charts if fund_charts else '<div style="color:#94a3b8;font-size:12px">No per-fund data available.</div>'}
+          </div>
+        </details>
+      </div>
+    </div>"""
 
 
 def _fund_card_html(h: dict, verdict: dict) -> str:

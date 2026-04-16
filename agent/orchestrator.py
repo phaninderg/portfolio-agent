@@ -116,6 +116,16 @@ class Orchestrator:
             errors.append(f"fetch_benchmark: {exc}")
             self._log_line(f"⚠ Benchmark fetch failed: {exc}")
 
+        # Step C: Year-on-Year XIRR
+        try:
+            from tools.yoy_xirr import enrich_holdings_with_yoy_xirr
+            holdings, self._yoy_portfolio = enrich_holdings_with_yoy_xirr(holdings)
+            self._log_line("✓ Year-on-Year XIRR computed")
+        except Exception as exc:
+            self._yoy_portfolio = None
+            errors.append(f"yoy_xirr: {exc}")
+            self._log_line(f"⚠ YoY XIRR computation failed: {exc}")
+
         dur = (datetime.now() - t0).total_seconds()
         status = "partial" if errors else "success"
         self.results.append(AgentResult("ResearchAgent", status, holdings, errors, dur))
@@ -229,8 +239,11 @@ class Orchestrator:
         from config import REPORT_HTML_PATH
 
         market_condition = self._detect_market(scored)
+        yoy_portfolio = getattr(self, "_yoy_portfolio", None)
+        yoy_data = {"portfolio": yoy_portfolio} if yoy_portfolio else None
         output_path = generate_report(
             scored, verdicts, self.user_profile,
-            market_condition, REPORT_HTML_PATH
+            market_condition, REPORT_HTML_PATH,
+            yoy_data=yoy_data,
         )
         return output_path
